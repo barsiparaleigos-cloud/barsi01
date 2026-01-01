@@ -1,0 +1,38 @@
+# barsi01
+
+MVP de jobs diários para alimentar tabelas no Supabase (preços, dividendos, sinais).
+
+## Estrutura
+- `sql/001_init.sql`: cria as tabelas no Supabase
+- `jobs/sync_prices.py`: insere preços do dia
+- `jobs/sync_dividends.py`: insere dividendos (mock inicial)
+- `jobs/compute_signals.py`: calcula preço-teto e sinal
+- `.github/workflows/daily.yml`: executa os jobs diariamente via GitHub Actions
+
+## Setup (local)
+1. Crie `.env.local` na raiz (não é commitado)
+   - Use como base o `.env.example`
+2. Crie e ative o venv
+   - Windows (PowerShell):
+     - `python -m venv venv`
+     - `venv\Scripts\Activate.ps1`
+3. Instale dependências
+   - `pip install --upgrade pip`
+   - `pip install -r requirements.txt`
+4. Crie as tabelas no Supabase
+   - Abra o SQL Editor do Supabase e execute `sql/001_init.sql`
+5. Rode os jobs
+   - `python jobs/sync_prices.py`
+   - `python jobs/sync_dividends.py`
+   - `python jobs/compute_signals.py`
+
+## Setup (GitHub Actions)
+Em Settings → Secrets and variables → Actions, crie:
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+O workflow executa diariamente e também permite rodar manualmente.
+
+## Nota sobre dependências
+Os scripts usam a API REST do Supabase (PostgREST) via `requests` para manter a instalação leve.
