@@ -28,6 +28,6 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          python jobs/sync_prices.py
-          python jobs/sync_dividends.py
-          python jobs/compute_signals.py
+          python -m jobs.sync_prices
+          python -m jobs.sync_dividends
+          python -m jobs.compute_signals

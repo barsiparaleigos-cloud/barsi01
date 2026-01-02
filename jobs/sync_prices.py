@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from datetime import date
 
-from jobs.common import TICKERS, get_supabase_admin_client
+from jobs.common import get_supabase_admin_client, list_active_tickers, log_job_run
 
 
 def main() -> None:
     sb = get_supabase_admin_client()
+    started_at = datetime.now(timezone.utc)
 
     today = date.today().isoformat()
 
@@ -21,12 +23,39 @@ def main() -> None:
         "ABEV3": 13.20,
     }
 
-    rows = [{"date": today, "ticker": t, "price": float(mock_prices.get(t, 0.0))} for t in TICKERS]
+    tickers = list_active_tickers(sb)
+    # Schema atual (Supabase): prices_daily(close, volume) + unique(ticker, date)
+    rows = [
+        {
+            "date": today,
+            "ticker": t,
+            "close": float(mock_prices.get(t, 0.0)),
+            "volume": None,
+        }
+        for t in tickers
+    ]
 
     # Upsert por (date, ticker)
-    sb.upsert("prices_daily", rows, on_conflict="date,ticker")
-
-    print(f"✅ {len(rows)} preços atualizados para {today}")
+    status = "success"
+    message = None
+    try:
+        sb.upsert("prices_daily", rows, on_conflict="ticker,date")
+        print(f"✅ {len(rows)} preços atualizados para {today}")
+    except Exception as e:
+        status = "error"
+        message = str(e)
+        raise
+    finally:
+        finished_at = datetime.now(timezone.utc)
+        log_job_run(
+            sb,
+            job_name="sync_prices",
+            status=status,
+            rows_processed=len(rows),
+            message=message,
+            started_at=started_at,
+            finished_at=finished_at,
+        )
 
 
 if __name__ == "__main__":

@@ -1,6 +1,17 @@
 .env.local
+
+# Local runtime data (SQLite, caches, downloads)
+data/
+
+# Webapp (React/Vite)
+webapp/node_modules/
+webapp/dist/
+webapp/.vite/
 venv/
 __pycache__/
 *.pyc
 .DS_Store
 .vscode/
+
+# Data (configs de integrações com API keys)
+data/integrations/*.json

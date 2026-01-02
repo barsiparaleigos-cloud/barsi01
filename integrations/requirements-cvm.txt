@@ -1,0 +1,6 @@
+# Dependências para integração CVM
+# Os dados da CVM são públicos e não requerem autenticação
+
+requests>=2.31.0    # HTTP client para download dos arquivos
+pandas>=2.1.0       # Processamento de dados CSV
+openpyxl>=3.1.2     # Opcional: suporte a Excel se necessário
