@@ -1,4 +1,4 @@
-# barsi01
+# Dividendos para leigos
 
 MVP de jobs diários para alimentar tabelas no Supabase (preços, dividendos, sinais).
 

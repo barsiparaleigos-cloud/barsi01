@@ -13,14 +13,14 @@
 ### Opção 1: Teste Rápido (via script)
 
 ```powershell
-cd "C:\Users\rafae\OneDrive\Desktop\Barsi Para Leigos\barsi01"
+cd "<PROJECT_ROOT>\barsi01"
 .\scripts\test_sync_brapi.ps1
 ```
 
 ### Opção 2: Teste Manual
 
 ```powershell
-cd "C:\Users\rafae\OneDrive\Desktop\Barsi Para Leigos\barsi01"
+cd "<PROJECT_ROOT>\barsi01"
 
 # Ativar venv (se necessário)
 .\venv\Scripts\Activate.ps1

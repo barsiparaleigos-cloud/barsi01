@@ -240,7 +240,7 @@ class CVMIntegration:
         
         return result
     
-    def calcular_metricas_barsi(
+    def calcular_metricas_dividendos(
         self,
         dividendos: pd.DataFrame,
         patrimonio: pd.DataFrame,
@@ -248,7 +248,7 @@ class CVMIntegration:
         acoes_em_circulacao: Dict[str, int]
     ) -> pd.DataFrame:
         """
-        Calcula métricas da metodologia Barsi
+        Calcula métricas da metodologia de dividendos
         
         Args:
             dividendos: DataFrame com dividendos
@@ -264,7 +264,7 @@ class CVMIntegration:
             - ABAIXO_DO_TETO (bool)
             - MARGEM_SEGURANCA (%)
         """
-        logger.info("Calculando métricas Barsi...")
+        logger.info("Calculando métricas da metodologia...")
         
         # Merge dividendos + patrimônio
         df = dividendos.merge(

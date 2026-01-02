@@ -136,12 +136,12 @@ export function StockDetailModal({ open, onOpenChange, stock }: StockDetailModal
                 <>
                   Esta ação está <strong className="text-green-700">{discount.toFixed(1)}% abaixo do preço teto</strong>, 
                   o que significa que ela está oferecendo um retorno em dividendos acima dos 6% mínimos recomendados 
-                  por Barsi. Este é um bom momento para considerar a compra segundo a metodologia.
+                  por esta metodologia. Este é um bom momento para considerar a compra segundo a metodologia.
                 </>
               ) : (
                 <>
                   Esta ação está <strong className="text-red-700">{Math.abs(discount).toFixed(1)}% acima do preço teto</strong>. 
-                  Segundo a metodologia Barsi, o ideal é aguardar uma correção de preço antes de comprar, 
+                  Segundo a metodologia, o ideal é aguardar uma correção de preço antes de comprar, 
                   para garantir um dividend yield de no mínimo 6% ao ano.
                 </>
               )}

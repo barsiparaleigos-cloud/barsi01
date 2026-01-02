@@ -61,7 +61,17 @@ ON companies_cvm USING gin(to_tsvector('portuguese', denominacao_social));
 -- TRIGGER: Atualizar updated_at
 -- ==========================================
 
--- Reutilizar função existente (criada na migração 003)
+-- Garantir que a função exista (idempotente)
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+DROP TRIGGER IF EXISTS companies_cvm_updated_at ON companies_cvm;
+
 CREATE TRIGGER companies_cvm_updated_at
     BEFORE UPDATE ON companies_cvm
     FOR EACH ROW
@@ -93,14 +103,27 @@ COMMENT ON COLUMN companies_cvm.situacao_cvm IS
 -- Habilitar RLS
 ALTER TABLE companies_cvm ENABLE ROW LEVEL SECURITY;
 
+-- Recriar policies de forma idempotente
+DROP POLICY IF EXISTS "Leitura publica de empresas CVM" ON companies_cvm;
+DROP POLICY IF EXISTS "Apenas service_role pode modificar" ON companies_cvm;
+
 -- Política: Leitura pública (dados abertos da CVM)
 CREATE POLICY "Leitura publica de empresas CVM"
 ON companies_cvm FOR SELECT
 USING (true);
 
--- Política: Apenas service_role pode inserir/atualizar (via jobs)
-CREATE POLICY "Apenas service_role pode modificar"
-ON companies_cvm FOR ALL
+-- Políticas de escrita: apenas service_role (via jobs)
+CREATE POLICY "companies_cvm_insert_service_role"
+ON companies_cvm FOR INSERT
+WITH CHECK (auth.role() = 'service_role');
+
+CREATE POLICY "companies_cvm_update_service_role"
+ON companies_cvm FOR UPDATE
+USING (auth.role() = 'service_role')
+WITH CHECK (auth.role() = 'service_role');
+
+CREATE POLICY "companies_cvm_delete_service_role"
+ON companies_cvm FOR DELETE
 USING (auth.role() = 'service_role');
 
 -- ==========================================

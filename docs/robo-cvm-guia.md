@@ -2,7 +2,7 @@
 
 ## 🎯 O que é?
 
-Robô automatizado que baixa e processa dados oficiais da **CVM (Comissão de Valores Mobiliários)** para o projeto Barsi para Leigos.
+Robô automatizado que baixa e processa dados oficiais da **CVM (Comissão de Valores Mobiliários)** para o projeto Dividendos para leigos.
 
 ## 🔓 Dados Abertos - Sem Login!
 
@@ -24,7 +24,7 @@ Robô automatizado que baixa e processa dados oficiais da **CVM (Comissão de Va
 - **ITR** (Informações Trimestrais)
 - DRE, BPP, BPA, Fluxo de Caixa, etc.
 
-### 3. Dados para Metodologia Barsi
+### 3. Dados para Metodologia de Dividendos
 - 💰 **Dividendos pagos** (da DRE)
 - 📊 **Patrimônio Líquido** (do BPP)
 - 📈 **Lucros** (da DRE)
@@ -162,7 +162,7 @@ dividendos = cvm.extrair_dividendos(df_dre)
 url = f"{self.BASE_URL}/CIA_ABERTA/DOC/ITR/DADOS/itr_cia_aberta_{year}.zip"
 ```
 
-## 🎯 Métricas Barsi disponíveis
+## 🎯 Métricas disponíveis
 
 Com os dados da CVM, você pode calcular:
 

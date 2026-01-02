@@ -29,7 +29,7 @@ interface EmpresaData {
   monitorar: boolean;
   elegivel_barsi: boolean;
   
-  // Métricas Barsi
+  // Métricas da metodologia
   dividend_yield_atual: number | null;
   consistencia_dividendos: number | null;
   
@@ -97,7 +97,7 @@ export function CompanyDataCard({ empresa, compact = false }: CompanyDataCardPro
               
               {empresa.elegivel_barsi && (
                 <Badge variant="success">
-                  ✅ Elegível Barsi
+                  ✅ Elegível
                 </Badge>
               )}
               
@@ -154,7 +154,7 @@ export function CompanyDataCard({ empresa, compact = false }: CompanyDataCardPro
           {empresa.setor_besst && getSetorBesstBadge(empresa.setor_besst)}
           
           {empresa.elegivel_barsi && (
-            <Badge variant="success">✅ Elegível Barsi</Badge>
+            <Badge variant="success">✅ Elegível</Badge>
           )}
           
           <Badge variant={empresa.situacao === 'ATIVO' ? 'default' : 'secondary'}>
@@ -189,12 +189,12 @@ export function CompanyDataCard({ empresa, compact = false }: CompanyDataCardPro
         </div>
       </div>
       
-      {/* Seção: Métricas Barsi */}
+      {/* Seção: Métricas da metodologia */}
       {empresa.monitorar && (
         <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
           <h3 className="font-semibold mb-3 flex items-center gap-2 text-blue-700">
             <TrendingUp className="size-4" />
-            Métricas Metodologia Barsi
+            Métricas da Metodologia
           </h3>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>

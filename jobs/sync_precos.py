@@ -34,7 +34,7 @@ class PriceSync:
     - Detectar e tratar erros
     """
     
-    def __init__(self, db_path: str = "data/barsi.db", api_key: Optional[str] = None):
+    def __init__(self, db_path: str = "data/dividendos.db", api_key: Optional[str] = None):
         self.db_path = Path(db_path)
         self.brapi = BrapiIntegration(api_key)
         self.synced_count = 0
@@ -280,7 +280,7 @@ def main():
     parser = argparse.ArgumentParser(description='Sincronização de preços via Brapi')
     parser.add_argument('--test', action='store_true', help='Testar com 4 ações gratuitas')
     parser.add_argument('--api-key', type=str, help='API key da Brapi (opcional)')
-    parser.add_argument('--db', type=str, default='data/barsi.db', help='Caminho do banco')
+    parser.add_argument('--db', type=str, default='data/dividendos.db', help='Caminho do banco')
     
     args = parser.parse_args()
     

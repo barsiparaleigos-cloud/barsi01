@@ -1,6 +1,6 @@
-# 🎯 ROADMAP - Barsi Para Leigos
+# 🎯 ROADMAP - Dividendos para leigos
 
-**Projeto:** Sistema de Recomendação de Ações - Metodologia Luiz Barsi Filho  
+**Projeto:** Sistema de Recomendação de Ações - Metodologia de dividendos  
 **Iniciado:** Janeiro 2026  
 **Status:** 🟢 Em Desenvolvimento Ativo
 
@@ -11,6 +11,12 @@
 **Fase 1 (Fundação):** ████████░░ 80% ✅  
 **Fase 2 (Core Features):** ██░░░░░░░░ 20% 🔄  
 **Fase 3 (Avançado):** ░░░░░░░░░░ 0% ⏳
+
+---
+
+## 📌 Fonte de verdade (metodologia)
+
+- 📄 **Metodologia + Fórmula + Critérios + Estrelas do ranking:** [docs/METODOLOGIA-FORMULA-COMPLETA.md](docs/METODOLOGIA-FORMULA-COMPLETA.md)
 
 ---
 
@@ -74,7 +80,7 @@
 - [x] Exibição de última sincronização
 
 ### 1.8 Documentação ✅
-- [x] docs/consolidacao-projeto-metodologia-barsi.md
+- [x] docs/METODOLOGIA-FORMULA-COMPLETA.md
 - [x] docs/integracao-cvm.md
 - [x] docs/robo-cvm-guia.md
 - [x] docs/plano-historico-e-ri.md
@@ -85,7 +91,7 @@
 ## 🔄 FASE 2: CORE FEATURES (35% Concluído)
 
 ### 2.1 Filtro de Empresas BESST ✅ CONCLUÍDO
-**Objetivo:** Focar apenas em empresas da metodologia Barsi
+**Objetivo:** Focar apenas em empresas da metodologia
 
 - [x] **2.1.1** Criar classificador BESSTClassifier em database/besst_classifier.py
 - [x] **2.1.2** Sistema de migrações atômicas (database/migrations.py)
@@ -223,7 +229,7 @@
   - [ ] Tab "Dividendos" (gráfico de barras + tabela)
   - [ ] Tab "Preços" (gráfico candlestick)
   - [ ] Tab "RI" (Relações com Investidores)
-  - [ ] Tab "Análise Barsi" (score + critérios)
+  - [ ] Tab "Análise" (score + critérios)
 - [ ] **2.6.3** Navegação: clicar em empresa → abrir modal ou página
 - [ ] **2.6.4** Integrar com Chart.js ou Recharts
 - [ ] **2.6.5** Responsividade mobile
@@ -288,7 +294,7 @@
   ```
 - [ ] **3.1.7** Job monitor_ri.py (execução diária às 00:00)
 - [ ] **3.1.8** Respeitar robots.txt e rate limiting (1 req/seg por domínio)
-- [ ] **3.1.9** User-Agent identificado: `BarsiParaLeigos/1.0`
+- [ ] **3.1.9** User-Agent identificado: `DividendosParaLeigos/1.0`
 - [ ] **3.1.10** Fallback: Se site bloquear, usar apenas dados CVM
 
 **Tipos de Mudanças a Detectar:**
@@ -434,7 +440,7 @@
 ### KPIs Técnicos
 - [x] Banco de dados populado: **2.650 empresas** ✅
 - [ ] Empresas classificadas BESST: 0 / ~300 empresas (meta)
-- [ ] Empresas elegíveis Barsi: 0 / ~50 empresas (meta)
+- [ ] Empresas elegíveis: 0 / ~50 empresas (meta)
 - [ ] Preços atualizados diariamente: 0 / 50 empresas
 - [ ] Uptime do sistema: Meta 99%
 
@@ -489,8 +495,7 @@
 ---
 
 ## 🔗 REFERÊNCIAS
-
-- [Consolidação Metodologia Barsi](docs/consolidacao-projeto-metodologia-barsi.md)
+- [Metodologia - Fórmula Completa](docs/METODOLOGIA-FORMULA-COMPLETA.md)
 - [Integração CVM](docs/integracao-cvm.md)
 - [Robô CVM - Guia](docs/robo-cvm-guia.md)
 - [Plano Histórico & RI](docs/plano-historico-e-ri.md)
@@ -500,7 +505,7 @@
 
 **Última Atualização:** 02/01/2026 - 00:30  
 **Próxima Revisão:** Semanal (toda segunda-feira)  
-**Responsável:** Time Barsi Para Leigos
+**Responsável:** Time Dividendos para leigos
 
 ---
 

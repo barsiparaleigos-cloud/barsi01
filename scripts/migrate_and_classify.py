@@ -35,7 +35,7 @@ def main():
     """Executa migração e classificação"""
     
     print("\n" + "=" * 80)
-    print("🚀 MIGRAÇÃO E CLASSIFICAÇÃO BESST - Barsi Para Leigos")
+    print("🚀 MIGRACAO E CLASSIFICACAO BESST - Dividendos para leigos")
     print("=" * 80)
     
     try:

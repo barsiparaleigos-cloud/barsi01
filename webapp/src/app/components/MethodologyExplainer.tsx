@@ -47,7 +47,7 @@ export function MethodologyExplainer() {
       {/* Hero */}
       <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
         <CardHeader className="text-center pb-3">
-          <CardTitle className="text-2xl">A Metodologia Luiz Barsi</CardTitle>
+          <CardTitle className="text-2xl">A Metodologia de Dividendos</CardTitle>
           <CardDescription className="text-base">
             Aprenda a investir como um dos maiores investidores de dividendos do Brasil
           </CardDescription>
@@ -92,7 +92,7 @@ export function MethodologyExplainer() {
         <CardHeader>
           <CardTitle>Setores BESST: Onde Investir</CardTitle>
           <CardDescription>
-            Barsi concentra seus investimentos em 5 setores "à prova de balas"
+            A metodologia concentra o foco em 5 setores "à prova de balas"
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -155,7 +155,7 @@ export function MethodologyExplainer() {
               <div className="space-y-2">
                 <h5 className="text-sm font-medium">Por que 6%?</h5>
                 <p className="text-sm text-muted-foreground">
-                  É o retorno mínimo que Barsi considera aceitável. Abaixo disso, não 
+                  É o retorno mínimo que consideramos aceitável. Abaixo disso, não 
                   vale a pena o risco. Quanto maior o DY, melhor!
                 </p>
               </div>
@@ -210,7 +210,7 @@ export function MethodologyExplainer() {
             <AccordionItem value="item-3">
               <AccordionTrigger>Posso vender minhas ações depois?</AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Sim, mas Barsi recomenda só vender se a empresa deteriorar fundamentalmente 
+                Sim, mas a metodologia recomenda só vender se a empresa deteriorar fundamentalmente 
                 (mudar de negócio, parar de pagar dividendos, ter problemas sérios). A ideia 
                 é manter para sempre e viver dos dividendos, não do lucro da venda.
               </AccordionContent>

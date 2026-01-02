@@ -1,6 +1,6 @@
-"""
-Integrador Master de APIs
-Gerencia todas as fontes de dados para a metodologia Barsi
+"""Integrador Master de APIs
+
+Gerencia todas as fontes de dados para a metodologia de dividendos.
 """
 
 from __future__ import annotations
@@ -14,20 +14,48 @@ ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
 from integrations.brapi_integration import BrapiIntegration
+from integrations.cvm_integration import CVMIntegration
+from integrations.b3_integration import B3Integration
+from integrations.yahoo_integration import YahooIntegration
+from integrations.fintz_integration import FintzIntegration
+from integrations.hgbrasil_integration import HGBrasilIntegration
 
 
 class MasterIntegrator:
     """
-    Integrador master que orquestra todas as fontes de dados:
-    - Brapi: Precos e dividendos (tempo real)
-    - CVM: Dados fundamentalistas oficiais
-    - B3: Dados corporativos
-    - Yahoo Finance: Backup/complemento
+    Integrador master que orquestra fontes de dados (cápsulas isoladas):
+    - Brapi: preços/dividendos
+    - CVM: dados oficiais (cadastro/demonstrações)
+    - B3: dados corporativos (health-check público; API oficial exige credenciais)
+    - Yahoo Finance: backup/complemento
+    - Fintz: fundamentos (placeholder/health-check)
+    - HG Brasil: cotações/mercado (health-check)
     """
     
-    def __init__(self, brapi_key: Optional[str] = None):
+    def __init__(
+        self,
+        brapi_key: Optional[str] = None,
+        fintz_key: Optional[str] = None,
+        hgbrasil_key: Optional[str] = None,
+    ):
         self.brapi = BrapiIntegration(brapi_key)
+        self.cvm = CVMIntegration()
+        self.b3 = B3Integration()
+        self.yahoo = YahooIntegration()
+        self.fintz = FintzIntegration(api_key=fintz_key)
+        self.hgbrasil = HGBrasilIntegration(api_key=hgbrasil_key)
         self.sources_status = {}
+
+    @staticmethod
+    def _normalize_test_result(test: Dict[str, Any]) -> Dict[str, Any]:
+        raw = (test or {}).get("status")
+        if raw == "success":
+            return {"status": "online", "message": "OK"}
+        if raw == "partial":
+            return {"status": "partial", "message": test.get("message", "Partial")}
+        if raw == "error":
+            return {"status": "error", "message": test.get("message", "Error")}
+        return {"status": "error", "message": str(test) if test else "Unknown"}
     
     def test_all_connections(self) -> Dict[str, Any]:
         """
@@ -40,76 +68,32 @@ class MasterIntegrator:
         print("TESTE DE CONECTIVIDADE - TODAS AS APIS")
         print("=" * 70)
         
-        results = {}
-        
-        # 1. Brapi
-        print("\n[1/4] Testando Brapi...")
-        try:
-            test = self.brapi.test_connection()
-            if test.get('status') == 'success':
-                print("  [OK] Brapi conectada")
-                results['brapi'] = {'status': 'online', 'message': 'OK'}
-            else:
-                print("  [ERRO] Brapi falhou")
-                results['brapi'] = {'status': 'offline', 'message': 'Falha na conexao'}
-        except Exception as e:
-            print(f"  [ERRO] Brapi: {e}")
-            results['brapi'] = {'status': 'error', 'message': str(e)}
-        
-        # 2. CVM (API Dados Abertos)
-        print("\n[2/4] Testando CVM API...")
-        try:
-            import requests
-            resp = requests.get(
-                "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/itr_cia_aberta_2024.zip",
-                timeout=10,
-                stream=True
-            )
-            if resp.status_code == 200:
-                print("  [OK] CVM API acessivel")
-                results['cvm'] = {'status': 'online', 'message': 'OK'}
-            else:
-                print(f"  [AVISO] CVM retornou {resp.status_code}")
-                results['cvm'] = {'status': 'partial', 'message': f'HTTP {resp.status_code}'}
-        except Exception as e:
-            print(f"  [ERRO] CVM: {e}")
-            results['cvm'] = {'status': 'error', 'message': str(e)}
-        
-        # 3. B3 (Site institucional)
-        print("\n[3/4] Testando B3...")
-        try:
-            resp = requests.get(
-                "https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetInitialCompanies/eyJsYW5ndWFnZSI6InB0LWJyIn0=",
-                headers={'User-Agent': 'Mozilla/5.0'},
-                timeout=10
-            )
-            if resp.status_code == 200:
-                print("  [OK] B3 API acessivel")
-                results['b3'] = {'status': 'online', 'message': 'OK'}
-            else:
-                print(f"  [AVISO] B3 retornou {resp.status_code}")
-                results['b3'] = {'status': 'partial', 'message': f'HTTP {resp.status_code}'}
-        except Exception as e:
-            print(f"  [ERRO] B3: {e}")
-            results['b3'] = {'status': 'error', 'message': str(e)}
-        
-        # 4. Yahoo Finance (backup)
-        print("\n[4/4] Testando Yahoo Finance...")
-        try:
-            resp = requests.get(
-                "https://query1.finance.yahoo.com/v8/finance/chart/ITUB4.SA",
-                headers={'User-Agent': 'Mozilla/5.0'},
-                timeout=10
-            )
-            if resp.status_code == 200:
-                print("  [OK] Yahoo Finance acessivel")
-                results['yahoo'] = {'status': 'online', 'message': 'OK'}
-            else:
-                print(f"  [AVISO] Yahoo retornou {resp.status_code}")
-                results['yahoo'] = {'status': 'partial', 'message': f'HTTP {resp.status_code}'}
-        except Exception as e:
-            print(f"  [ERRO] Yahoo: {e}")
-            results['yahoo'] = {'status': 'error', 'message': str(e)}
+        results: Dict[str, Any] = {}
+
+        checks = [
+            ("brapi", "Brapi", self.brapi.test_connection),
+            ("cvm", "CVM", self.cvm.test_connection),
+            ("b3", "B3", self.b3.test_connection),
+            ("yahoo", "Yahoo", self.yahoo.test_connection),
+            ("fintz", "Fintz", self.fintz.test_connection),
+            ("hgbrasil", "HG Brasil", self.hgbrasil.test_connection),
+        ]
+
+        for idx, (key, label, fn) in enumerate(checks, start=1):
+            print(f"\n[{idx}/{len(checks)}] Testando {label}...")
+            try:
+                test = fn()
+                normalized = self._normalize_test_result(test)
+                results[key] = normalized
+                icon = {
+                    "online": "[OK]",
+                    "partial": "[AVISO]",
+                    "error": "[ERRO]",
+                }.get(normalized["status"], "[?]")
+                print(f"  {icon} {label}: {normalized['message']}")
+            except Exception as e:
+                print(f"  [ERRO] {label}: {e}")
+                results[key] = {"status": "error", "message": str(e)}
         
         # Resumo
         print("\n" + "=" * 70)

@@ -1,4 +1,4 @@
-# 📋 TODO - Projeto Barsi Para Leigos
+# 📋 TODO - Projeto Dividendos para leigos
 
 **Última Atualização:** 02/01/2026
 
@@ -8,14 +8,14 @@
 
 ### 1. Filtro de Empresas BESST ⏰ 1 hora
 **Status:** 🔴 Não Iniciado  
-**Objetivo:** Classificar e filtrar empresas por setores da metodologia Barsi
+**Objetivo:** Classificar e filtrar empresas por setores da metodologia
 
 - [ ] Criar função `classificar_setor_besst()` em `database/models.py`
 - [ ] Adicionar coluna `setor_besst` na tabela `empresas`
 - [ ] Rodar script de classificação em massa
 - [ ] Criar endpoint `/api/empresas/elegiveis`
-- [ ] Adicionar toggle "Apenas empresas Barsi" no CompanyList.tsx
-- [ ] Badge visual "✅ Elegível Barsi" nas empresas que atendem critérios
+- [ ] Adicionar toggle "Apenas empresas elegíveis" no CompanyList.tsx
+- [ ] Badge visual "✅ Elegível" nas empresas que atendem critérios
 
 **Critérios:**
 - Setor BESST (Bancos, Energia, Saneamento, Seguros, Telecomunicações)
@@ -99,7 +99,7 @@ precos_historico:
   - [ ] Dividendos (gráfico + tabela)
   - [ ] Preços (gráfico candlestick)
   - [ ] RI (contatos + histórico de mudanças)
-  - [ ] Análise Barsi (score + critérios)
+  - [ ] Análise (score + critérios)
 - [ ] Navegação: clicar em empresa → modal ou página detalhada
 - [ ] Gráficos: Chart.js ou Recharts
 

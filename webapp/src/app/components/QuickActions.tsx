@@ -31,7 +31,7 @@ export function QuickActions({ onNavigate }: QuickActionProps) {
     {
       icon: BookOpen,
       title: 'Aprender Método',
-      description: 'Como funciona o Barsi',
+      description: 'Como funciona a metodologia',
       color: 'bg-purple-50 text-purple-600 hover:bg-purple-100',
       action: () => onNavigate('learn')
     },

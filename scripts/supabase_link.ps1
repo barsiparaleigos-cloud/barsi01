@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 
-# Run from repo root (barsi01)
+# Run from repo root
 if (-not (Test-Path -Path '.git')) {
   Write-Error 'Execute este script na raiz do repo (onde existe .git).'
 }

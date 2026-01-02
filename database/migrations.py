@@ -141,7 +141,7 @@ class MigrationManager:
 
 def migration_001_add_besst_columns(cursor):
     """
-    Adiciona colunas para classificação BESST e elegibilidade Barsi
+    Adiciona colunas para classificação BESST e elegibilidade da metodologia
     """
     cursor.execute("""
         ALTER TABLE empresas ADD COLUMN setor_besst TEXT DEFAULT NULL
@@ -280,7 +280,7 @@ MIGRATIONS = [
 ]
 
 
-def run_migrations(db_path: str = "data/barsi.db"):
+def run_migrations(db_path: str = "data/dividendos.db"):
     """Executa todas as migrações pendentes"""
     logger.info("=" * 60)
     logger.info("🔧 INICIANDO MIGRAÇÕES DO BANCO DE DADOS")

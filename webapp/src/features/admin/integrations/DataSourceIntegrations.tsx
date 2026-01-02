@@ -79,7 +79,7 @@ export default function DataSourceIntegrations() {
           Integração de Fontes de Dados
         </h1>
         <p className="text-muted-foreground mt-2">
-          Configure e gerencie as integrações com APIs de mercado para alimentar o motor Barsi.
+          Configure e gerencie as integrações com APIs de mercado para alimentar o motor de dividendos.
         </p>
       </div>
 

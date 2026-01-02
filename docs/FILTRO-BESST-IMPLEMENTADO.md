@@ -148,12 +148,12 @@ Cada empresa BESST exibe badge colorido:
 - 💧 **Saneamento/Seguros:** Verde (`bg-green-100 text-green-700`)
 - 📡 **Telecom:** Roxo (`bg-purple-100 text-purple-700`)
 
-#### **D) Badge Elegível Barsi**
-- ✅ **Elegível Barsi:** Verde esmeralda (quando `elegivel_barsi = TRUE`)
+#### **D) Badge Elegível**
+- ✅ **Elegível:** Verde esmeralda (quando `elegivel_barsi = TRUE`)
 
 #### **E) Alerta Informativo**
 Quando filtro BESST ativo, exibe:
-> ✅ Filtro BESST ativo: Exibindo apenas empresas dos setores **B**ancos, **E**nergia, **S**aneamento/Seguros e **T**elecomunicações que estão no radar da metodologia Barsi.
+> ✅ Filtro BESST ativo: Exibindo apenas empresas dos setores **B**ancos, **E**nergia, **S**aneamento/Seguros e **T**elecomunicações.
 
 ---
 
@@ -188,14 +188,14 @@ python scripts/auto_classify_new.py
 
 **Backend:**
 ```bash
-cd "c:\Users\rafae\OneDrive\Desktop\Barsi Para Leigos\barsi01"
+cd "<PROJECT_ROOT>\barsi01"
 python web/simple_server.py
 # Servidor rodando em http://127.0.0.1:8001
 ```
 
 **Frontend:**
 ```bash
-cd "c:\Users\rafae\OneDrive\Desktop\Barsi Para Leigos\barsi01\webapp"
+cd "<PROJECT_ROOT>\barsi01\webapp"
 npm run dev
 # Interface em http://127.0.0.1:5173
 ```
@@ -323,11 +323,11 @@ except Exception as e:
 - [ ] Salvar em `consistencia_dividendos`
 - [ ] Badge "5/5 anos pagando" vs "3/5 anos"
 
-**2.4 🟡 Elegibilidade Barsi Automática** - MÉDIA
+**2.4 🟡 Elegibilidade Automática** - MÉDIA
 - [ ] Após calcular DY e Consistência
 - [ ] Critérios: `DY >= 6%` AND `Consistência >= 80%`
 - [ ] Atualizar `elegivel_barsi = TRUE`
-- [ ] Exibir badge ✅ Elegível Barsi
+- [ ] Exibir badge ✅ Elegível
 
 ---
 

@@ -74,4 +74,4 @@ $lines = @(
 )
 
 Set-Content -Path ".env.local" -Value $lines -Encoding UTF8
-Write-Host "✅ Wrote .env.local" -ForegroundColor Green
+Write-Host "OK: Wrote .env.local" -ForegroundColor Green

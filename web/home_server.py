@@ -298,7 +298,7 @@ def _render_html(rows: list[dict[str, Any]]) -> str:
 <head>
   <meta charset=\"utf-8\" />
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
-  <title>Barsi01 — Home</title>
+    <title>Dividendos para leigos — Home</title>
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }}
     h1 {{ margin: 0 0 8px 0; }}
@@ -310,7 +310,7 @@ def _render_html(rows: list[dict[str, Any]]) -> str:
   </style>
 </head>
 <body>
-  <h1>Home — Motor Barsi (MVP)</h1>
+    <h1>Home — Motor de Dividendos (MVP)</h1>
         <p class=\"meta\">Data: <code>{today}</code> · Fonte: <code>{source}</code></p>
 
     <h2>Status</h2>

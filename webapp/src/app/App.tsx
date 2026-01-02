@@ -120,7 +120,7 @@ export default function App() {
         {/* Hero Section */}
         <section className="text-center space-y-4 py-8 max-w-7xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Invista como Luiz Barsi
+            Invista com foco em dividendos
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Descubra as melhores ações de dividendos seguindo a metodologia do maior investidor 
@@ -334,7 +334,7 @@ export default function App() {
         <section className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg">
           <h4 className="font-medium text-yellow-900 mb-2">⚠️ Aviso Importante</h4>
           <p className="text-sm text-yellow-800">
-            Este sistema é uma ferramenta educacional baseada na metodologia pública de Luiz Barsi. 
+            Este sistema é uma ferramenta educacional baseada em uma metodologia pública de dividendos. 
             <strong> NÃO é uma recomendação de investimento.</strong> Todo investimento envolve riscos. 
             Consulte um profissional certificado e faça sua própria análise antes de investir. 
             Rentabilidade passada não garante resultados futuros.

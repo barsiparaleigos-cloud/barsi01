@@ -16,7 +16,7 @@ export function Header() {
             <TrendingUp className="size-6" />
           </div>
           <div>
-            <h1 className="font-bold">Barsi para Leigos</h1>
+            <h1 className="font-bold">Dividendos para leigos</h1>
             <p className="text-xs text-muted-foreground">Invista com sabedoria</p>
           </div>
         </div>

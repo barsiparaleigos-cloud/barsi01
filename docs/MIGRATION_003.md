@@ -71,7 +71,7 @@ SELECT * FROM ticker_mapping;
 
 ### 2. Testar sync de preços (local)
 ```powershell
-cd "C:\Users\rafae\OneDrive\Desktop\Barsi Para Leigos\barsi01"
+cd "<PROJECT_ROOT>\barsi01"
 python jobs\sync_precos.py --test
 ```
 

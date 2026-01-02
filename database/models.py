@@ -1,6 +1,6 @@
-"""
-Database Models - Persistência de dados do projeto Barsi
-SQLite para dados locais seguros e permanentes
+"""Database Models - Persistência de dados do projeto.
+
+SQLite para dados locais seguros e permanentes.
 """
 
 import sqlite3
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class Database:
     """Gerenciador de banco de dados SQLite"""
     
-    def __init__(self, db_path: str = "data/barsi.db"):
+    def __init__(self, db_path: str = "data/dividendos.db"):
         """
         Inicializa conexão com banco de dados
         

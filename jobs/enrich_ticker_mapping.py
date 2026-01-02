@@ -7,18 +7,18 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from datetime import datetime
-from typing import Dict, Any, List, Optional
+from datetime import datetime, timezone
+from typing import Dict, Any
 
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from jobs.common import SupabaseRestClient, load_settings, log_job_run
+from jobs.common import SupabaseRestClient, get_supabase_admin_client, log_job_run
 
 
 def normalize_cnpj(cnpj: str) -> str:
     """Remove formatação do CNPJ"""
-    return ''.join(c for c in cnpj if c.isdigit())
+    return ''.join(c for c in str(cnpj or "") if c.isdigit())
 
 
 def enrich_ticker_with_cvm(sb: SupabaseRestClient) -> Dict[str, Any]:
@@ -34,12 +34,10 @@ def enrich_ticker_with_cvm(sb: SupabaseRestClient) -> Dict[str, Any]:
     print("\n[*] Buscando tickers ativos no ticker_mapping...")
     
     # Buscar tickers com CNPJ
-    result = sb.select(
+    tickers = sb.select(
         "ticker_mapping",
-        "select=ticker,cnpj,nome&ativo=eq.true&cnpj=not.is.null"
+        "select=ticker,cnpj,nome,ativo,verificado,tipo_acao,empresa_id&ativo=eq.true&cnpj=not.is.null"
     )
-    
-    tickers = result.get('data', [])
     
     print(f"[OK] {len(tickers)} tickers com CNPJ para enriquecer")
     
@@ -54,12 +52,10 @@ def enrich_ticker_with_cvm(sb: SupabaseRestClient) -> Dict[str, Any]:
         print(f"\n[*] {ticker} ({cnpj})...")
         
         # Buscar na tabela companies_cvm
-        cvm_result = sb.select(
+        cvm_data = sb.select(
             "companies_cvm",
-            f"select=*&cnpj=like.*{cnpj}*"
+            f"select=cnpj,denominacao_social&cnpj=eq.{cnpj}"
         )
-        
-        cvm_data = cvm_result.get('data', [])
         
         if not cvm_data:
             print(f"  [AVISO] Nao encontrado na CVM")
@@ -70,24 +66,23 @@ def enrich_ticker_with_cvm(sb: SupabaseRestClient) -> Dict[str, Any]:
         cvm = cvm_data[0]
         
         # Atualizar ticker_mapping com dados da CVM
-        update_data = {
-            'nome': cvm.get('denominacao_social', ticker_data['nome']),
-            'cvm_code': cvm.get('cvm_code'),
-            'setor_atividade': cvm.get('setor_atividade'),
-            'updated_at': datetime.now().isoformat()
+        update_row = {
+            'ticker': ticker,
+            'cnpj': ticker_data.get('cnpj'),
+            'nome': cvm.get('denominacao_social') or ticker_data.get('nome'),
+            'ativo': ticker_data.get('ativo', True),
+            'verificado': ticker_data.get('verificado', False),
+            'tipo_acao': ticker_data.get('tipo_acao'),
+            'empresa_id': ticker_data.get('empresa_id'),
+            'updated_at': datetime.now().isoformat(),
         }
-        
-        # Fazer UPDATE
+
+        # UPSERT por ticker (preserva as colunas selecionadas acima)
         try:
-            sb.update(
-                "ticker_mapping",
-                update_data,
-                f"ticker=eq.{ticker}"
-            )
+            sb.upsert("ticker_mapping", [update_row], on_conflict="ticker")
             
             enriched_count += 1
             print(f"  [OK] Enriquecido: {cvm.get('denominacao_social')}")
-            print(f"    Setor: {cvm.get('setor_atividade')}")
         
         except Exception as e:
             print(f"  [ERRO] Falha ao atualizar: {e}")
@@ -110,18 +105,17 @@ def main():
     print("ENRIQUECIMENTO TICKER_MAPPING COM DADOS CVM")
     print("=" * 70)
     
-    # Carregar configuração
-    settings = load_settings()
-    
+    sb = get_supabase_admin_client()
+    started_at = datetime.now(timezone.utc)
+    status = "success"
+    message = None
+
     # Conectar Supabase
     print("\n[*] Conectando ao Supabase...")
-    sb = SupabaseRestClient(
-        url=settings["SUPABASE_URL"],
-        key=settings["SERVICE_ROLE_KEY"]
-    )
     print("[OK] Supabase conectado")
     
     # Enriquecer
+    result: Dict[str, Any] = {}
     try:
         result = enrich_ticker_with_cvm(sb)
         
@@ -133,36 +127,29 @@ def main():
         print(f"[AVISO] Nao encontrados: {result['not_found']}")
         print("=" * 70)
         
-        # Registrar sucesso
-        log_job_run(
-            sb=sb,
-            job_name="enrich_ticker_mapping",
-            status="success",
-            rows_processed=result['enriched'],
-            error_message=None
-        )
-        
-        print("\n[OK] Job registrado: success")
-    
     except Exception as e:
+        status = "error"
+        message = str(e)
         print("\n" + "=" * 70)
         print("[ERRO] FALHA NO ENRIQUECIMENTO")
         print("=" * 70)
         print(f"[ERRO] {str(e)}")
         print("=" * 70)
-        
-        # Registrar erro
-        log_job_run(
-            sb=sb,
-            job_name="enrich_ticker_mapping",
-            status="error",
-            rows_processed=0,
-            error_message=str(e)
-        )
-        
-        print("\n[OK] Job registrado: error")
-        
         raise
+    finally:
+        finished_at = datetime.now(timezone.utc)
+        rows_processed = int(result.get("enriched") or 0) if status == "success" else 0
+        log_job_run(
+            sb,
+            job_name="enrich_ticker_mapping",
+            status=status,
+            rows_processed=rows_processed,
+            message=message,
+            started_at=started_at,
+            finished_at=finished_at,
+        )
+
+        print(f"\n[OK] Job registrado: {status}")
 
 
 if __name__ == "__main__":

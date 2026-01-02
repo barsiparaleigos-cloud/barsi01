@@ -1,6 +1,6 @@
 """
 Classificador BESST
-Sistema de classificação de empresas por setor da metodologia Barsi
+Sistema de classificação de empresas por setor (BESST) na metodologia
 """
 
 import logging
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class BESSTClassifier:
     """
-    Classificador de setores BESST (Barsi)
+    Classificador de setores BESST
     
     B - Bancos
     E - Energia Elétrica

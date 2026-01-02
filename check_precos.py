@@ -1,7 +1,7 @@
 """Script para verificar preços no banco"""
 import sqlite3
 
-conn = sqlite3.connect('data/barsi.db')
+conn = sqlite3.connect('data/dividendos.db')
 cursor = conn.cursor()
 
 cursor.execute('''

@@ -78,7 +78,7 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
                   <TrendingUp className="size-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="font-bold text-sm truncate">Barsi para Leigos</h1>
+                  <h1 className="font-bold text-sm truncate">Dividendos para leigos</h1>
                   <p className="text-xs text-muted-foreground truncate">Invista com sabedoria</p>
                 </div>
               </div>
@@ -188,7 +188,7 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
         {!collapsed && (
           <div className="p-3 border-t bg-gray-50">
             <p className="text-xs text-muted-foreground text-center">
-              Barsi para Leigos v1.0
+              Dividendos para leigos v1.0
             </p>
           </div>
         )}

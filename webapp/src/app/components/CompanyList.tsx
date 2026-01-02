@@ -247,7 +247,7 @@ export function CompanyList() {
               <p className="text-sm text-blue-800">
                 <strong>✅ Filtro BESST ativo:</strong> Exibindo apenas empresas dos setores{' '}
                 <strong>B</strong>ancos, <strong>E</strong>nergia, <strong>S</strong>aneamento/Seguros e{' '}
-                <strong>T</strong>elecomunicações que estão no radar da metodologia Barsi.
+                <strong>T</strong>elecomunicações que estão no radar da metodologia de dividendos.
               </p>
             </div>
           )}
@@ -301,7 +301,7 @@ export function CompanyList() {
                       {empresa.monitorar && getSetorBesstBadge(empresa.setor_besst)}
                       {empresa.elegivel_barsi && (
                         <span className="text-xs px-2 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700">
-                          ✅ Elegível Barsi
+                          ✅ Elegível
                         </span>
                       )}
                     </div>

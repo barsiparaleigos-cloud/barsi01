@@ -1,7 +1,7 @@
 
-  # Barsiparaleigos
+  # Dividendos para leigos
 
-  This is a code bundle for Barsiparaleigos. The original project is available at https://www.figma.com/design/mUo7I3HSXQSTgFpCAML7dE/Barsiparaleigos.
+  This is a code bundle for Dividendos para leigos.
 
   ## Running the code
 

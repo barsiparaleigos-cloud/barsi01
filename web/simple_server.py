@@ -111,7 +111,7 @@ class APIHandler(BaseHTTPRequestHandler):
                 
                 # Tamanho do banco
                 import os
-                db_path = Path(__file__).parent.parent / "data" / "barsi.db"
+                db_path = Path(__file__).parent.parent / "data" / "dividendos.db"
                 database_size_mb = os.path.getsize(db_path) / (1024 * 1024) if db_path.exists() else 0
                 
                 self._send_json({
@@ -242,7 +242,7 @@ def run_server(port=8001):
     httpd = HTTPServer(server_address, APIHandler)
     
     print("="*60)
-    print(f"🚀 Servidor Backend - Barsi Para Leigos")
+    print(f"🚀 Servidor Backend - Dividendos para leigos")
     print("="*60)
     print(f"📡 Servidor rodando em http://127.0.0.1:{port}")
     print(f"📊 Endpoints disponíveis:")

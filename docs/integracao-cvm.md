@@ -211,7 +211,7 @@ ESCALA_MOEDA: MIL, MILHAO, etc
 ST_CONTA_FIXA: S/N (se é conta do elenco fixo)
 ```
 
-## 🎯 Dados Específicos para Metodologia Barsi
+## 🎯 Dados Específicos para Metodologia de Dividendos
 
 ### Dividend Yield
 1. **Dividendos pagos**: DRE → Conta "Dividendos e JCP"
@@ -223,7 +223,7 @@ ST_CONTA_FIXA: S/N (se é conta do elenco fixo)
 1. **Valor Patrimonial**: BPP → Patrimônio Líquido
 2. **Número de ações**: FCA
 3. **VPA = PL / Número de ações**
-4. **Preço teto = 1.5 × VPA** (metodologia Barsi)
+4. **Preço teto = 1.5 × VPA** (metodologia de dividendos)
 
 ### Setores BESST
 **Formulário de Referência (FRE)** → Seção "Descrição das Atividades":
@@ -297,7 +297,7 @@ dfp_url = f"https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aber
 
 # 4. Processar dividendos
 # 5. Mapear para tickers via Brapi
-# 6. Calcular métricas Barsi
+# 6. Calcular métricas da metodologia
 # 7. Salvar localmente
 ```
 

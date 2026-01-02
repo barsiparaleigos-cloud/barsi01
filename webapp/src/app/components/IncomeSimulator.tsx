@@ -42,7 +42,7 @@ export function IncomeSimulator() {
       <CardHeader>
         <CardTitle>Simulador de Renda Passiva</CardTitle>
         <CardDescription>
-          Veja quanto você pode ganhar seguindo a metodologia Barsi
+          Veja quanto você pode ganhar seguindo uma metodologia de dividendos
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -89,7 +89,7 @@ export function IncomeSimulator() {
               className="w-full"
             />
             <p className="text-xs text-muted-foreground">
-              Barsi recomenda mínimo de 6% ao ano
+              Meta minima: 6% ao ano
             </p>
           </div>
 

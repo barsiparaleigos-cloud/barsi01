@@ -1,8 +1,8 @@
-# Sistema de Integrações - Metodologia Barsi
+# Sistema de Integrações - Metodologia de Dividendos
 
 ## Visão Geral
 
-Sistema completo de sincronização de dados para análise de ações via metodologia Barsi, com 4 fontes de dados integradas e sistema de fallback automático.
+Sistema completo de sincronização de dados para análise de ações via metodologia de dividendos, com 4 fontes de dados integradas e sistema de fallback automático.
 
 ## APIs Integradas
 
@@ -309,7 +309,7 @@ TESTE DE CONECTIVIDADE - TODAS AS APIS
 
 ### Médio prazo (próximas semanas)
 9. ⏳ Implementar agendamento automático (daily sync)
-10. ⏳ Criar job de ranking Barsi (DY + consistência)
+10. ⏳ Criar job de ranking (DY + consistência)
 11. ⏳ Implementar análise fundamentalista (P/L, ROE, etc.)
 12. ⏳ UI para visualização de dados
 

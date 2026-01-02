@@ -22,7 +22,7 @@ Implementar versionamento temporal de todos os dados críticos das empresas:
 - ⏳ Sistema de notificações de mudanças
 - ⏳ Histórico de alterações no RI
 
-### 3. Filtro Metodologia Barsi (BESST)
+### 3. Filtro Metodologia de Dividendos (BESST)
 - ⏳ Classificar empresas por setor BESST
 - ⏳ Filtro automático (apenas empresas dentro do range)
 - ⏳ Dashboard focado em empresas elegíveis
@@ -372,7 +372,7 @@ CREATE INDEX idx_precos_acao_data ON precos_historico(acao_id, data);
       <TabsTrigger value="dividendos">Dividendos</TabsTrigger>
       <TabsTrigger value="precos">Preços</TabsTrigger>
       <TabsTrigger value="ri">Relações com Investidores</TabsTrigger>
-      <TabsTrigger value="analise">Análise Barsi</TabsTrigger>
+      <TabsTrigger value="analise">Análise da metodologia</TabsTrigger>
     </TabsList>
 
     {/* Tab: Visão Geral */}
@@ -450,10 +450,10 @@ CREATE INDEX idx_precos_acao_data ON precos_historico(acao_id, data);
       </div>
     </TabsContent>
 
-    {/* Tab: Análise Barsi */}
+    {/* Tab: Análise da metodologia */}
     <TabsContent value="analise">
       <ScoreCard 
-        score={empresa.barsi_score}
+        score={empresa.score_metodologia}
         criterios={[
           { nome: 'Setor BESST', atende: true },
           { nome: 'DY > 6%', atende: empresa.dy >= 6 },
@@ -467,7 +467,7 @@ CREATE INDEX idx_precos_acao_data ON precos_historico(acao_id, data);
 
 ---
 
-## 🎯 PARTE 5: Filtro de Empresas (Metodologia Barsi)
+## 🎯 PARTE 5: Filtro de Empresas (Metodologia de Dividendos)
 
 ### Critérios de Elegibilidade
 
@@ -537,13 +537,13 @@ def avaliar_consistencia_dividendos(empresa_id: int, anos: int = 5) -> float:
 # database/models.py - adicionar método
 class Database:
     
-    def get_empresas_elegiveis_barsi(
+    def get_empresas_elegiveis_metodologia(
         self,
         dy_minimo: float = 6.0,
         consistencia_minima: float = 80.0
     ) -> List[dict]:
         """
-        Retorna apenas empresas elegíveis pela metodologia Barsi
+        Retorna apenas empresas elegíveis pela metodologia
         """
         query = """
             SELECT 
@@ -572,7 +572,7 @@ def handle_empresas_elegiveis(self) -> dict:
     """
     GET /api/empresas/elegiveis
     
-    Retorna apenas empresas que atendem critérios Barsi
+    Retorna apenas empresas que atendem critérios da metodologia
     """
     db = get_db()
     
@@ -580,7 +580,7 @@ def handle_empresas_elegiveis(self) -> dict:
     dy_minimo = float(self.params.get('dy_minimo', 6.0))
     consistencia = float(self.params.get('consistencia', 80.0))
     
-    empresas = db.get_empresas_elegiveis_barsi(dy_minimo, consistencia)
+    empresas = db.get_empresas_elegiveis_metodologia(dy_minimo, consistencia)
     
     return {
         'total': len(empresas),
@@ -598,16 +598,16 @@ def handle_empresas_elegiveis(self) -> dict:
 // components/CompanyList.tsx
 <div className="flex items-center gap-2">
   <Switch 
-    id="filtro-barsi"
-    checked={filtroBarsiAtivo}
-    onCheckedChange={setFiltroBarsiAtivo}
+    id="filtro-metodologia"
+    checked={filtroMetodologiaAtivo}
+    onCheckedChange={setFiltroMetodologiaAtivo}
   />
-  <Label htmlFor="filtro-barsi">
-    Mostrar apenas empresas elegíveis Barsi
+  <Label htmlFor="filtro-metodologia">
+    Mostrar apenas empresas elegíveis
   </Label>
 </div>
 
-{filtroBarsiAtivo && (
+{filtroMetodologiaAtivo && (
   <Alert>
     <Info className="size-4" />
     <AlertTitle>Filtro Ativo</AlertTitle>
@@ -638,13 +638,13 @@ def handle_empresas_elegiveis(self) -> dict:
 - [ ] Salvar em tabela `relacoes_investidores`
 - [ ] Criar job `sync_cvm_ri.py` (mensal)
 
-### Sprint 3: Filtro Metodologia Barsi (2 dias)
+### Sprint 3: Filtro Metodologia de Dividendos (2 dias)
 - [ ] Implementar classificação de setores BESST
 - [ ] Calcular DY projetado de cada empresa
 - [ ] Calcular consistência de dividendos (5 anos)
 - [ ] Adicionar campos na tabela empresas (setor_besst, dy_atual, consistencia)
 - [ ] Criar endpoint GET /api/empresas/elegiveis
-- [ ] UI: Toggle de filtro + badge "Elegível Barsi"
+- [ ] UI: Toggle de filtro + badge "Elegível"
 
 ### Sprint 4: UI - Card com Tabs (3 dias)
 - [ ] Criar componente CompanyDetail.tsx
@@ -698,13 +698,13 @@ def classificar_besst_todas_empresas():
 <BarChart data={dividendosPorAno} />
 ```
 
-### 3. Badge "Elegível Barsi" (30 min)
+### 3. Badge "Elegível" (30 min)
 **Impacto:** Médio - destaque visual  
 **Complexidade:** Baixa - apenas condicional na UI
 
 ```tsx
 {empresa.elegivel_barsi && (
-  <Badge variant="success">✅ Elegível Barsi</Badge>
+  <Badge variant="success">✅ Elegível</Badge>
 )}
 ```
 
@@ -715,7 +715,7 @@ def classificar_besst_todas_empresas():
 ### ⚠️ Sobre o Scraping de RI
 - **Legalidade:** Respeitar robots.txt e termos de uso
 - **Rate Limiting:** Não fazer mais de 1 requisição por segundo por domínio
-- **User-Agent:** Identificar claramente: `BarsiParaLeigos/1.0 (contato@barsi.com)`
+- **User-Agent:** Identificar claramente: `DividendosParaLeigos/1.0 (contato@seu-dominio.com)`
 - **Fallback:** Se site bloquear, continuar usando apenas dados da CVM
 
 ### 💡 Otimizações
@@ -734,7 +734,7 @@ def classificar_besst_todas_empresas():
 
 - [Portal de Dados Abertos da CVM](https://dados.cvm.gov.br/)
 - [Documentação CKAN API](https://docs.ckan.org/en/2.9/api/)
-- [Metodologia Barsi - Consolidação](./consolidacao-projeto-metodologia-barsi.md)
+- [Metodologia - Fórmula Completa](./METODOLOGIA-FORMULA-COMPLETA.md)
 - [Integração CVM - Documentação](./integracao-cvm.md)
 - [Robô CVM - Guia](./robo-cvm-guia.md)
 
