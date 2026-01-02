@@ -16,8 +16,20 @@ def main() -> None:
     today = date.today().isoformat()
 
     tickers = list_active_tickers(sb)
-    # Schema atual (Supabase): prices_daily.close; dividends.amount_per_share
-    prices = sb.select("prices_daily", f"select=date,ticker,close&date=eq.{today}")
+    # Schema atual (Supabase): prefer `precos.fechamento` (Brapi) e cai para `prices_daily.close` (legado)
+    prices: list[dict[str, object]] = []
+    try:
+        prices = sb.select("precos", f"select=data,ticker,fechamento&data=eq.{today}")
+        # Normalizar para o shape usado abaixo
+        prices = [
+            {"date": r.get("data"), "ticker": r.get("ticker"), "close": r.get("fechamento")}
+            for r in prices
+        ]
+    except Exception:
+        prices = []
+
+    if not prices:
+        prices = sb.select("prices_daily", f"select=date,ticker,close&date=eq.{today}")
     dividends = sb.select("dividends", "select=ex_date,ticker,amount_per_share,type")
 
     if not prices:

@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
+from pathlib import Path
+import csv
 
 from dotenv import load_dotenv
 import requests
@@ -99,6 +101,9 @@ class SupabaseRestClient:
     def __init__(self, settings: Settings) -> None:
         self._base_rest = settings.supabase_url.rstrip("/") + "/rest/v1"
 
+        # Reuse HTTP session (important on Windows to avoid repeated TLS/CA overhead)
+        self._session = requests.Session()
+
         # Prefer service role for writes; fall back to anon (works if RLS is disabled
         # or policies allow the operation).
         auth_key = settings.supabase_service_role_key or settings.supabase_anon_key
@@ -111,7 +116,7 @@ class SupabaseRestClient:
     def select(self, table: str, query: str) -> list[dict[str, Any]]:
         # query exemplo: "select=date,ticker,price&date=eq.2026-01-01"
         url = f"{self._base_rest}/{table}?{query}"
-        resp = requests.get(url, headers=self._headers, timeout=30)
+        resp = self._session.get(url, headers=self._headers, timeout=30)
         if not resp.ok:
             raise RuntimeError(
                 f"Supabase select failed ({resp.status_code}) {table}: {resp.text}"
@@ -121,6 +126,43 @@ class SupabaseRestClient:
             raise RuntimeError(f"Unexpected response type from {table}: {type(data)}")
         return data
 
+    def count(self, table: str, filters: str = "") -> int:
+        """Retorna contagem exata de linhas via PostgREST.
+
+        Usa `Prefer: count=exact` e interpreta o header `Content-Range`.
+        `filters` deve ser um pedaço de querystring, ex.: "ticker=eq.ITUB4&date=gte.2026-01-01".
+        """
+        filters = (filters or "").lstrip("&").strip()
+        query = "select=*&limit=1"
+        if filters:
+            query += "&" + filters
+        url = f"{self._base_rest}/{table}?{query}"
+
+        headers = dict(self._headers)
+        headers["Prefer"] = "count=exact"
+
+        def _parse_count(resp: requests.Response) -> int:
+            content_range = resp.headers.get("Content-Range", "")
+            # Ex.: "0-0/123" ou "*/123"
+            if "/" in content_range:
+                try:
+                    return int(content_range.split("/")[-1])
+                except Exception:
+                    pass
+            raise RuntimeError(f"Supabase count failed for {table}: missing/invalid Content-Range")
+
+        # Prefer HEAD (mais leve). Se não suportado, cai para GET.
+        resp = self._session.head(url, headers=headers, timeout=30)
+        if resp.ok:
+            return _parse_count(resp)
+
+        resp = self._session.get(url, headers=headers, timeout=30)
+        if not resp.ok:
+            raise RuntimeError(
+                f"Supabase count failed ({resp.status_code}) {table}: {resp.text}"
+            )
+        return _parse_count(resp)
+
     def upsert(self, table: str, rows: list[dict[str, Any]], on_conflict: str | None = None) -> None:
         url = f"{self._base_rest}/{table}"
         if on_conflict:
@@ -129,7 +171,7 @@ class SupabaseRestClient:
         headers = dict(self._headers)
         headers["Prefer"] = "resolution=merge-duplicates"
 
-        resp = requests.post(url, headers=headers, json=rows, timeout=60)
+        resp = self._session.post(url, headers=headers, json=rows, timeout=60)
         if not resp.ok:
             raise RuntimeError(
                 f"Supabase upsert failed ({resp.status_code}) {table}: {resp.text}"
@@ -145,15 +187,45 @@ TICKERS = ["ITUB4", "BBAS3", "BBDC4", "TAEE11", "WEGE3", "EGIE3", "ABEV3"]
 
 
 def list_active_tickers(sb: SupabaseRestClient) -> list[str]:
-    """Retorna tickers ativos da tabela assets, ou fallback para TICKERS."""
+    """Retorna tickers ativos para os jobs (MVP).
+
+    Ordem de preferência:
+    1) `ticker_mapping` (mais alinhado com precos/dividends)
+    2) `assets` (legacy)
+    3) fallback local `TICKERS`
+
+    Se existir `data/universo_mvp.csv`, aplica filtro ao resultado.
+    """
+    # Prefer ticker_mapping
+    try:
+        rows = sb.select("ticker_mapping", "select=ticker&ativo=eq.true&order=ticker.asc")
+        tickers = [str(r.get("ticker", "")).strip().upper() for r in rows]
+        tickers = [t for t in tickers if t]
+        if tickers:
+            universo = load_universo_mvp_tickers()
+            if universo:
+                universo_set = set(universo)
+                tickers = [t for t in tickers if t in universo_set]
+            return tickers
+    except Exception:
+        pass
+
+    # Fallback: assets
     try:
         rows = sb.select("assets", "select=ticker&is_active=eq.true&order=ticker.asc")
+        tickers = [str(r.get("ticker", "")).strip().upper() for r in rows]
+        tickers = [t for t in tickers if t]
+        if tickers:
+            universo = load_universo_mvp_tickers()
+            if universo:
+                universo_set = set(universo)
+                tickers = [t for t in tickers if t in universo_set]
+            return tickers
     except Exception:
-        return list(TICKERS)
+        pass
 
-    tickers = [str(r.get("ticker", "")).strip() for r in rows]
-    tickers = [t for t in tickers if t]
-    return tickers or list(TICKERS)
+    universo = load_universo_mvp_tickers()
+    return universo or list(TICKERS)
 
 
 def log_job_run(
@@ -180,6 +252,34 @@ def log_job_run(
     }
     try:
         sb.upsert("job_runs", [payload])
-    except Exception:
+    except BaseException:
         # Logging de jobs não pode quebrar o job principal
         return
+
+
+def load_universo_mvp_tickers(path: str | None = None) -> list[str]:
+    """Carrega tickers do universo MVP a partir de CSV.
+
+    Formato esperado:
+      ticker,nome,setor_besst
+
+    Linhas começando com "#" são ignoradas.
+    Se o arquivo não existir, retorna [].
+    """
+    csv_path = Path(path or os.getenv("UNIVERSE_MVP_PATH") or "data/universo_mvp.csv")
+    if not csv_path.exists():
+        return []
+
+    with csv_path.open("r", encoding="utf-8", newline="") as f:
+        lines = [ln for ln in f.read().splitlines() if ln.strip() and not ln.lstrip().startswith("#")]
+
+    reader = csv.DictReader(lines)
+    tickers: list[str] = []
+    seen: set[str] = set()
+    for row in reader:
+        t = str(row.get("ticker") or "").strip().upper()
+        if not t or t in seen:
+            continue
+        seen.add(t)
+        tickers.append(t)
+    return tickers

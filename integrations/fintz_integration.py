@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-import requests
+from integrations.http_utils import HttpConfig, build_retry_session, request_json
 
 logger = logging.getLogger(__name__)
 
@@ -24,18 +24,17 @@ class FintzIntegration:
     def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None) -> None:
         self.api_key = api_key
         self.base_url = (base_url or self.BASE_URL).rstrip("/")
-        self.session = requests.Session()
-        self.session.headers.update({"User-Agent": "Mozilla/5.0"})
+        headers = {"User-Agent": "Mozilla/5.0"}
         if api_key:
             # Conforme docs: header X-API-Key (case-insensitive)
-            self.session.headers.update({"X-API-Key": api_key})
+            headers["X-API-Key"] = api_key
+        self._http_cfg = HttpConfig(timeout_seconds=20)
+        self.session = build_retry_session(headers=headers, config=self._http_cfg)
 
     def _get(self, path: str, *, params: Optional[dict[str, Any]] = None, timeout: int = 20) -> Any:
         url = f"{self.base_url}{path}"
-        resp = self.session.get(url, params=params or {}, timeout=timeout)
-        if not resp.ok:
-            raise RuntimeError(f"Fintz HTTP {resp.status_code} {path}: {resp.text}")
-        return resp.json()
+        # Do not include URL in errors (may include auth headers in logs elsewhere).
+        return request_json(self.session, "GET", url, params=params or {}, timeout_seconds=timeout)
 
     def test_connection(self) -> Dict[str, Any]:
         # Probe simples em endpoint público da própria API (exige key; sem key retornará 401/403).
@@ -93,4 +92,48 @@ class FintzIntegration:
             params["tipoDemonstracao"] = tipo_demonstracao
 
         data = self._get("/bolsa/b3/avista/itens-contabeis/por-ticker", params=params)
+        return data if isinstance(data, list) else []
+
+    def get_proventos(
+        self,
+        ticker: str,
+        *,
+        data_inicio: str,
+        data_fim: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Retorna eventos de proventos (dividendos/JCP etc.).
+
+        Endpoint: GET /bolsa/b3/avista/proventos?ticker=...&dataInicio=...&dataFim=...
+        """
+        ticker = str(ticker or "").strip().upper()
+        if not ticker or not data_inicio:
+            return []
+
+        params: dict[str, Any] = {"ticker": ticker, "dataInicio": data_inicio}
+        if data_fim:
+            params["dataFim"] = data_fim
+
+        data = self._get("/bolsa/b3/avista/proventos", params=params)
+        return data if isinstance(data, list) else []
+
+    def get_ohlc_history(
+        self,
+        ticker: str,
+        *,
+        data_inicio: str,
+        data_fim: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Retorna histórico OHLC diário (JSON).
+
+        Endpoint: GET /bolsa/b3/avista/cotacoes/historico
+        """
+        ticker = str(ticker or "").strip().upper()
+        if not ticker or not data_inicio:
+            return []
+
+        params: dict[str, Any] = {"ticker": ticker, "dataInicio": data_inicio}
+        if data_fim:
+            params["dataFim"] = data_fim
+
+        data = self._get("/bolsa/b3/avista/cotacoes/historico", params=params)
         return data if isinstance(data, list) else []

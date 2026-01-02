@@ -10,9 +10,11 @@ export interface FintzConfig {
   apiKey?: string;
   baseUrl: string;
   endpoints: {
-    fundamentals: string;
+    search: string;
+    indicatorsByTicker: string;
+    accountingItemsByTicker: string;
     dividends: string;
-    balanceSheet: string;
+    ohlcHistory: string;
   };
   rateLimit: {
     requestsPerMinute: number;
@@ -22,11 +24,13 @@ export interface FintzConfig {
 
 export const defaultFintzConfig: FintzConfig = {
   enabled: false,
-  baseUrl: 'https://api.fintz.com.br/v1',
+  baseUrl: 'https://api.fintz.com.br',
   endpoints: {
-    fundamentals: '/stocks/{ticker}/fundamentals',
-    dividends: '/stocks/{ticker}/dividends',
-    balanceSheet: '/stocks/{ticker}/balance-sheet',
+    search: '/bolsa/b3/avista/busca',
+    indicatorsByTicker: '/bolsa/b3/avista/indicadores/por-ticker',
+    accountingItemsByTicker: '/bolsa/b3/avista/itens-contabeis/por-ticker',
+    dividends: '/bolsa/b3/avista/proventos',
+    ohlcHistory: '/bolsa/b3/avista/cotacoes/historico',
   },
   rateLimit: {
     requestsPerMinute: 30,
@@ -35,7 +39,8 @@ export const defaultFintzConfig: FintzConfig = {
 
 export async function testFintzConnection(config: FintzConfig): Promise<{ success: boolean; message: string }> {
   try {
-    const url = `${config.baseUrl}${config.endpoints.fundamentals.replace('{ticker}', 'ITUB4')}`;
+    // Endpoint simples para probe: busca de ativos (exige key; sem key deve retornar 401/403).
+    const url = `${config.baseUrl}${config.endpoints.search}?q=ITUB&ativo=true`;
     const headers: HeadersInit = {};
     if (config.apiKey) {
       headers['X-API-Key'] = config.apiKey;
@@ -43,12 +48,15 @@ export async function testFintzConnection(config: FintzConfig): Promise<{ succes
 
     const res = await fetch(url, { headers, signal: AbortSignal.timeout(5000) });
     if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        return { success: false, message: `Autenticação falhou (HTTP ${res.status}). Verifique a API Key.` };
+      }
       return { success: false, message: `HTTP ${res.status}: ${res.statusText}` };
     }
 
     const data = await res.json();
-    if (!data) {
-      return { success: false, message: 'Resposta vazia' };
+    if (!Array.isArray(data)) {
+      return { success: false, message: 'Resposta inválida (esperado array)' };
     }
 
     return { success: true, message: 'Conexão OK' };

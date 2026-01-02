@@ -6,8 +6,11 @@ MVP de jobs diários para alimentar tabelas no Supabase (preços, dividendos, si
 - `sql/001_init.sql`: cria as tabelas no Supabase
 - `jobs/sync_prices.py`: insere preços do dia
 - `jobs/sync_dividends.py`: insere dividendos (mock inicial)
+- `jobs/sync_ticker_mapping_brapi_list.py`: popula/atualiza `ticker_mapping` via Brapi (universo de tickers)
+- `jobs/map_cnpj_to_ticker.py`: tenta preencher `ticker_mapping.cnpj` via matching com `companies_cvm`
 - `jobs/compute_signals.py`: calcula preço-teto e sinal
 - `.github/workflows/daily.yml`: executa os jobs diariamente via GitHub Actions
+- `scripts/check_supabase_persistence.py`: sanity check de persistência (counts + últimos jobs)
 
 ## Setup (local)
 1. Crie `.env.local` na raiz (não é commitado)
@@ -22,6 +25,8 @@ MVP de jobs diários para alimentar tabelas no Supabase (preços, dividendos, si
 4. Crie as tabelas no Supabase
    - Abra o SQL Editor do Supabase e execute `sql/001_init.sql`
 5. Rode os jobs
+   - (Opcional) Popular universo de tickers: `python -m jobs.sync_ticker_mapping_brapi_list`
+   - (Opcional) Mapear CNPJ→ticker (heurística): `python -m jobs.map_cnpj_to_ticker`
    - `python -m jobs.sync_prices`
    - `python -m jobs.sync_dividends`
    - `python -m jobs.compute_signals`

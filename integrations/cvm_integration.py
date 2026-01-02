@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 import logging
 from datetime import datetime
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -88,18 +89,26 @@ class CVMIntegration:
         
         # URL do arquivo ZIP
         url = f"{self.BASE_URL}/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_{year}.zip"
+
+        # Cache local (DFP é anual e não muda frequentemente)
+        cache_file = self.cache_dir / f"dfp_{year}.zip"
         
         try:
-            # Download do ZIP
-            response = requests.get(url, timeout=300)  # 5 min timeout (arquivo grande)
-            response.raise_for_status()
-            
-            logger.info(f"✅ ZIP baixado: {len(response.content) / 1024 / 1024:.1f} MB")
+            content: bytes
+            if cache_file.exists() and cache_file.stat().st_size > 0:
+                logger.info(f"Usando cache local do DFP: {cache_file}")
+                content = cache_file.read_bytes()
+            else:
+                # Download do ZIP
+                response = requests.get(url, timeout=300)  # 5 min timeout (arquivo grande)
+                response.raise_for_status()
+                content = response.content
+                logger.info(f"✅ ZIP baixado: {len(content) / 1024 / 1024:.1f} MB")
             
             # Extrair arquivos do ZIP em memória
             demonstracoes = {}
             
-            with zipfile.ZipFile(BytesIO(response.content)) as z:
+            with zipfile.ZipFile(BytesIO(content)) as z:
                 # Listar arquivos disponíveis
                 available_files = z.namelist()
                 logger.info(f"Arquivos no ZIP: {len(available_files)}")
@@ -139,9 +148,9 @@ class CVMIntegration:
                         logger.warning(f"  ⚠️ {filename} não encontrado no ZIP")
             
             # Salvar cache local
-            cache_file = self.cache_dir / f"dfp_{year}.zip"
-            with open(cache_file, 'wb') as f:
-                f.write(response.content)
+            if not (cache_file.exists() and cache_file.stat().st_size > 0):
+                with open(cache_file, 'wb') as f:
+                    f.write(content)
             
             logger.info(f"✅ DFP {year} processado: {len(demonstracoes)} demonstrações")
             return demonstracoes
@@ -238,6 +247,108 @@ class CVMIntegration:
         
         logger.info(f"✅ PL extraído para {len(result)} empresas")
         
+        return result
+
+    def _extrair_conta_por_keywords(
+        self,
+        df: pd.DataFrame,
+        *,
+        keywords: List[str],
+        output_col: str,
+    ) -> pd.DataFrame:
+        """Extrai um valor consolidado por DT_REFER a partir de keywords em DS_CONTA.
+
+        Heurística para evitar dupla contagem:
+        - filtra por DS_CONTA via keywords
+        - converte VL_CONTA para numérico
+        - mantém somente o(s) nível(is) mais agregados via menor profundidade de CD_CONTA
+          (menos subníveis separados por '.')
+        - soma os valores desse nível agregado por empresa/data
+        """
+
+        if df is None or len(df) == 0:
+            return pd.DataFrame(columns=["CNPJ_CIA", "DENOM_CIA", "DT_REFER", output_col])
+
+        pattern = "|".join(re.escape(k) for k in keywords if k)
+        if not pattern:
+            return pd.DataFrame(columns=["CNPJ_CIA", "DENOM_CIA", "DT_REFER", output_col])
+
+        mask = df["DS_CONTA"].astype(str).str.lower().str.contains(pattern, case=False, na=False)
+        d = df[mask].copy()
+        if len(d) == 0:
+            return pd.DataFrame(columns=["CNPJ_CIA", "DENOM_CIA", "DT_REFER", output_col])
+
+        d["VL_CONTA"] = pd.to_numeric(d["VL_CONTA"], errors="coerce")
+        d = d.dropna(subset=["VL_CONTA"])
+        if len(d) == 0:
+            return pd.DataFrame(columns=["CNPJ_CIA", "DENOM_CIA", "DT_REFER", output_col])
+
+        # Profundidade de CD_CONTA (quanto menor, mais agregado)
+        cd = d.get("CD_CONTA")
+        if cd is not None:
+            d["CD_CONTA"] = d["CD_CONTA"].astype(str)
+            d["__depth"] = d["CD_CONTA"].str.count(r"\.")
+            min_depth = d.groupby(["CNPJ_CIA", "DT_REFER"])["__depth"].transform("min")
+            d = d[d["__depth"] == min_depth]
+
+        result = (
+            d.groupby(["CNPJ_CIA", "DENOM_CIA", "DT_REFER"], as_index=False)["VL_CONTA"]
+            .sum()
+            .rename(columns={"VL_CONTA": output_col})
+        )
+        result[output_col] = pd.to_numeric(result[output_col], errors="coerce")
+        return result
+
+    def extrair_divida_bruta(self, df_bpp: pd.DataFrame) -> pd.DataFrame:
+        """Extrai dívida bruta (heurística) do BPP consolidado.
+
+        Retorna colunas:
+        - CNPJ_CIA, DENOM_CIA, DT_REFER, DIVIDA_BRUTA
+        """
+        logger.info("Extraindo Dívida Bruta (heurística) do BPP...")
+
+        # Cobertura ampla (Português). A heurística tenta pegar linhas agregadas.
+        keywords = [
+            "emprést",
+            "emprest",
+            "financi",
+            "debênt",
+            "debent",
+            "arrend",
+            "leasing",
+            "capta",
+        ]
+
+        result = self._extrair_conta_por_keywords(
+            df_bpp,
+            keywords=keywords,
+            output_col="DIVIDA_BRUTA",
+        )
+
+        logger.info(f"✅ Dívida bruta extraída para {len(result)} empresas")
+        return result
+
+    def extrair_caixa_equivalentes(self, df_bpa: pd.DataFrame) -> pd.DataFrame:
+        """Extrai Caixa e Equivalentes (heurística) do BPA consolidado.
+
+        Retorna colunas:
+        - CNPJ_CIA, DENOM_CIA, DT_REFER, CAIXA_EQUIVALENTES
+        """
+        logger.info("Extraindo Caixa e Equivalentes (heurística) do BPA...")
+
+        keywords = [
+            "caixa",
+            "equivalentes",
+            "equivalente",
+        ]
+
+        result = self._extrair_conta_por_keywords(
+            df_bpa,
+            keywords=keywords,
+            output_col="CAIXA_EQUIVALENTES",
+        )
+
+        logger.info(f"✅ Caixa/equivalentes extraídos para {len(result)} empresas")
         return result
     
     def calcular_metricas_dividendos(

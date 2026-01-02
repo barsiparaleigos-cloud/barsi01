@@ -71,11 +71,13 @@ def handle_fintz_get() -> dict[str, Any]:
     if config is None:
         return {
             "enabled": False,
-            "baseUrl": "https://api.fintz.com.br/v1",
+            "baseUrl": "https://api.fintz.com.br",
             "endpoints": {
-                "fundamentals": "/stocks/{ticker}/fundamentals",
-                "dividends": "/stocks/{ticker}/dividends",
-                "balanceSheet": "/stocks/{ticker}/balance-sheet",
+                "search": "/bolsa/b3/avista/busca",
+                "indicatorsByTicker": "/bolsa/b3/avista/indicadores/por-ticker",
+                "accountingItemsByTicker": "/bolsa/b3/avista/itens-contabeis/por-ticker",
+                "dividends": "/bolsa/b3/avista/proventos",
+                "ohlcHistory": "/bolsa/b3/avista/cotacoes/historico",
             },
             "rateLimit": {"requestsPerMinute": 30},
         }
@@ -91,11 +93,13 @@ def handle_hgbrasil_get() -> dict[str, Any]:
     if config is None:
         return {
             "enabled": False,
-            "baseUrl": "https://api.hgbrasil.com/finance",
+            "baseUrl": "https://api.hgbrasil.com",
             "endpoints": {
-                "stocks": "/stock_price",
-                "indexes": "/market_status",
-                "currencies": "/currency",
+                "stockPrice": "/finance/stock_price",
+                "taxes": "/finance/taxes",
+                "dividendsV2": "/v2/finance/dividends",
+                "indicatorsV2": "/v2/finance/indicators",
+                "historicalV2": "/v2/finance/historical",
             },
             "rateLimit": {"requestsPerMinute": 60},
         }

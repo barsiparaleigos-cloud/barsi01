@@ -140,7 +140,7 @@ export default function DataSourceIntegrations() {
                 histórico de preços e dividendos de ações da B3. Ideal para o MVP.
               </p>
               <p className="mt-2">
-                <strong>Limite:</strong> 60 req/min (plano gratuito).
+                <strong>Limite:</strong> varia por plano (use cache + sync).
               </p>
             </CardContent>
           </Card>
@@ -178,7 +178,7 @@ export default function DataSourceIntegrations() {
                 histórico de proventos ajustados para eventos corporativos.
               </p>
               <p className="mt-2">
-                <strong>Limite:</strong> 30 req/min (verificar plano).
+                <strong>Limite:</strong> varia por plano (use cache + sync).
               </p>
             </CardContent>
           </Card>
@@ -215,7 +215,7 @@ export default function DataSourceIntegrations() {
                 <strong>HG Brasil</strong> é uma API estável para cotações, índices (Ibovespa, S&P500) e moedas.
               </p>
               <p className="mt-2">
-                <strong>Limite:</strong> 60 req/min (plano gratuito).
+                <strong>Limite:</strong> varia por plano (use cache + sync).
               </p>
             </CardContent>
           </Card>

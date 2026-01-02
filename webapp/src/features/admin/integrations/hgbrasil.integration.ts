@@ -10,9 +10,11 @@ export interface HgBrasilConfig {
   apiKey?: string;
   baseUrl: string;
   endpoints: {
-    stocks: string;
-    indexes: string;
-    currencies: string;
+    stockPrice: string;
+    taxes: string;
+    dividendsV2: string;
+    indicatorsV2: string;
+    historicalV2: string;
   };
   rateLimit: {
     requestsPerMinute: number;
@@ -22,11 +24,13 @@ export interface HgBrasilConfig {
 
 export const defaultHgBrasilConfig: HgBrasilConfig = {
   enabled: false,
-  baseUrl: 'https://api.hgbrasil.com/finance',
+  baseUrl: 'https://api.hgbrasil.com',
   endpoints: {
-    stocks: '/stock_price',
-    indexes: '/market_status',
-    currencies: '/currency',
+    stockPrice: '/finance/stock_price',
+    taxes: '/finance/taxes',
+    dividendsV2: '/v2/finance/dividends',
+    indicatorsV2: '/v2/finance/indicators',
+    historicalV2: '/v2/finance/historical',
   },
   rateLimit: {
     requestsPerMinute: 60,
@@ -35,7 +39,7 @@ export const defaultHgBrasilConfig: HgBrasilConfig = {
 
 export async function testHgBrasilConnection(config: HgBrasilConfig): Promise<{ success: boolean; message: string }> {
   try {
-    const url = `${config.baseUrl}${config.endpoints.stocks}?key=${config.apiKey || ''}&symbol=ITUB4`;
+    const url = `${config.baseUrl}${config.endpoints.stockPrice}?key=${config.apiKey || ''}&symbol=ITUB4`;
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
 
     if (!res.ok) {

@@ -6,26 +6,65 @@
 
 ## 🔴 PRIORIDADE ALTA (Implementar Agora)
 
-### 1. Filtro de Empresas BESST ⏰ 1 hora
+### 1. Universo MVP (30–50 tickers BESST) ⏰ 2–4 horas
 **Status:** 🔴 Não Iniciado  
-**Objetivo:** Classificar e filtrar empresas por setores da metodologia
+**Objetivo:** Definir e “travar” um universo pequeno, verificável e ensinável
 
-- [ ] Criar função `classificar_setor_besst()` em `database/models.py`
-- [ ] Adicionar coluna `setor_besst` na tabela `empresas`
-- [ ] Rodar script de classificação em massa
-- [ ] Criar endpoint `/api/empresas/elegiveis`
-- [ ] Adicionar toggle "Apenas empresas elegíveis" no CompanyList.tsx
-- [ ] Badge visual "✅ Elegível" nas empresas que atendem critérios
+- [ ] Criar lista `universo_mvp.csv` (ticker, nome, setor_besst)
+- [ ] Marcar `verificado=true` no mapeamento CNPJ↔ticker para esse universo
+- [ ] Definir regra simples de exclusão (ex.: baixa liquidez / unit / BDR / ETF fora do escopo)
 
-**Critérios:**
-- Setor BESST (Bancos, Energia, Saneamento, Seguros, Telecomunicações)
-- DY ≥ 6%
-- Consistência de dividendos ≥ 80% (últimos 5 anos)
+**Critérios de aceite:**
+- Lista com 30–50 tickers revisados
+- 100% dos tickers com mapeamento confiável no banco
 
-**Impacto:** 🚀 Alto - Foco imediato nas empresas certas  
+**Impacto:** 🚀 Alto - destrava ranking + cache + custo baixo  
 **Complexidade:** 🟢 Baixa
 
 ---
+
+### 2. Preço diário confiável (sem depender de API paga) ⏰ 1–3 dias
+**Status:** 🔴 Não Iniciado  
+**Objetivo:** Garantir `preco_atual`/histórico para calcular preço-teto e exibir “comprar/esperar”
+
+- [ ] Curto prazo: manter Brapi para destravar (com cache + batch)
+- [ ] Caminho definitivo: ingestão batch B3 (ex.: COTAHIST) para `prices_daily`
+
+**Critérios de aceite:**
+- Para todo ticker do universo MVP: preço do dia disponível
+- Job diário idempotente (reprocessa sem duplicar)
+
+**Impacto:** 🚀 Alto  
+**Complexidade:** 🟡 Média
+
+---
+
+### 3. Proventos (mínimo para DPA 5 anos) ⏰ 2–5 dias
+**Status:** 🔴 Não Iniciado  
+**Objetivo:** Alimentar `dpa_5y` de forma rastreável
+
+- [ ] Definir fonte MVP (HG Brasil v2 limitado ao universo MVP, com cache)
+- [ ] Persistir proventos raw + normalizados (dedupe + tipo)
+
+**Critérios de aceite:**
+- Para todo ticker do universo MVP: histórico suficiente para cálculo de DPA médio
+- Campo `source` + `collected_at` em cada registro
+
+**Impacto:** 🚀 Alto (maior gargalo)  
+**Complexidade:** 🔴 Alta
+
+---
+
+### 4. Validar lucro/ROE/payout no CVM (DFP) ⏰ 1–2 dias
+**Status:** 🔴 Não Iniciado  
+**Objetivo:** Fechar a metodologia “na íntegra” sem buracos de dado
+
+- [ ] Confirmar preenchimento de `lucro_liquido` (corrigir casos de encoding/labels)
+- [ ] Calcular `roe_percent` e `payout_percent` com dados disponíveis
+
+**Critérios de aceite:**
+- 2024 populado para uma amostra relevante (ex.: top 20 do universo MVP)
+- Métricas com `NULL` explicado por gate (sem dado) e não por bug
 
 ### 2. Sistema de Histórico de Dados ⏰ 5 dias
 **Status:** 🔴 Não Iniciado  
@@ -105,6 +144,14 @@ precos_historico:
 
 **Impacto:** 🚀 Alto - UX profissional  
 **Complexidade:** 🟡 Média
+
+---
+
+## ✅ CONCLUÍDO (para não voltar atrás)
+
+### Filtro BESST (classificação + UI) ✅
+- Classificador BESST + migrações + endpoints + toggle e estatísticas
+- Ver detalhes em `docs/FILTRO-BESST-IMPLEMENTADO.md`
 
 ---
 

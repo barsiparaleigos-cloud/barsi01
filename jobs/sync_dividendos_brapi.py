@@ -14,7 +14,9 @@ from typing import List, Dict, Any
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from jobs.common import get_supabase_admin_client, log_job_run
+from jobs.common import get_supabase_admin_client, log_job_run, load_universo_mvp_tickers
+import os
+
 from integrations.brapi_integration import BrapiIntegration
 
 
@@ -196,7 +198,8 @@ def main() -> None:
     
     # Conectar à Brapi
     print("\n[*] Conectando a Brapi...")
-    brapi = BrapiIntegration()
+    api_key = (os.getenv("BRAPI_API_KEY") or "").strip() or None
+    brapi = BrapiIntegration(api_key=api_key)
     
     test_result = brapi.test_connection()
     if test_result.get('status') != 'success':
@@ -208,6 +211,19 @@ def main() -> None:
     # Buscar tickers ativos
     print("\n[*] Buscando tickers ativos...")
     tickers = list_active_tickers_from_mapping(sb)
+
+    # Se existir Universo MVP, restringir o processamento a ele.
+    universo = load_universo_mvp_tickers()
+    if universo:
+        tickers = [t for t in tickers if t in set(universo)]
+        print(f"[INFO] Universo MVP ativo: {len(tickers)} ticker(s) após filtro")
+
+    # Sem token, manter apenas o universo gratuito para evitar falhas
+    if not api_key:
+        tickers = [t for t in tickers if t in BrapiIntegration.FREE_TICKERS]
+        if not tickers:
+            tickers = list(BrapiIntegration.FREE_TICKERS)
+        print("[AVISO] BRAPI_API_KEY ausente; usando apenas tickers gratuitos.")
     
     if not tickers:
         print("\n[AVISO] Nenhum ticker ativo para sincronizar")

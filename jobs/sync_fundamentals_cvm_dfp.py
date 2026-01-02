@@ -16,6 +16,8 @@ Requer (Supabase): executar `sql/007_add_fundamentals_raw.sql`.
 
 from __future__ import annotations
 
+import os
+
 from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -24,7 +26,26 @@ from jobs.common import get_supabase_admin_client, list_active_tickers, log_job_
 
 
 def _normalize_cnpj(cnpj: str) -> str:
-    return "".join(c for c in str(cnpj or "") if c.isdigit())
+    digits = "".join(c for c in str(cnpj or "") if c.isdigit())
+    return digits.zfill(14) if digits else ""
+
+
+def _df_filter_by_cnpj(df: Any, cnpj: str) -> Any:
+    """Filtra DataFrame CVM por CNPJ (normalizado) de forma robusta."""
+    if df is None:
+        return None
+
+    cnpj_norm = _normalize_cnpj(cnpj)
+    if not cnpj_norm:
+        return None
+
+    try:
+        series = df["CNPJ_CIA"].astype(str)
+        # Normaliza CNPJ do CSV (remove não-dígitos e pad 14)
+        series = series.str.replace(r"\D+", "", regex=True).str.zfill(14)
+        return df[series == cnpj_norm]
+    except Exception:
+        return None
 
 
 def _safe_date(value: Any) -> Optional[str]:
@@ -50,13 +71,9 @@ def _df_rows_for_company(df: Any, cnpj: str, *, max_rows: int = 500) -> List[Dic
     if df is None:
         return []
 
-    try:
-        sub = df[df.get("CNPJ_CIA").astype(str) == str(cnpj)]  # type: ignore[attr-defined]
-    except Exception:
-        try:
-            sub = df[df["CNPJ_CIA"].astype(str) == str(cnpj)]
-        except Exception:
-            return []
+    sub = _df_filter_by_cnpj(df, cnpj)
+    if sub is None:
+        return []
 
     try:
         if len(sub) > max_rows:
@@ -124,7 +141,29 @@ def main(
 
     try:
         if not tickers:
+            # Prefer tickers que já têm CNPJ (destrava ingestões CVM: DFP/FRE/RI)
+            try:
+                rows = sb.select(
+                    "ticker_mapping",
+                    "select=ticker&ativo=eq.true&cnpj=not.is.null&order=ticker.asc",
+                )
+                tickers = [str(r.get("ticker") or "").strip().upper() for r in rows]
+                tickers = [t for t in tickers if t]
+            except Exception:
+                tickers = []
+
+        if not tickers:
             tickers = list_active_tickers(sb)
+
+        # CI safety: limitar quantidade de tickers por execução (opcional)
+        limit_env = os.getenv("DFP_TICKER_LIMIT")
+        if limit_env:
+            try:
+                lim = int(limit_env)
+                if lim > 0:
+                    tickers = tickers[:lim]
+            except Exception:
+                pass
 
         tickers = [t.strip().upper() for t in tickers if t and str(t).strip()]
         tickers = list(dict.fromkeys(tickers))
@@ -150,6 +189,7 @@ def main(
         demonstracoes = cvm.download_dfp(int(year))
         df_dre = demonstracoes.get("DRE")
         df_bpp = demonstracoes.get("BPP")
+        df_bpa = demonstracoes.get("BPA")
 
         if df_dre is None or df_bpp is None:
             raise RuntimeError("DFP sem DRE/BPP (zip incompleto ou formato inesperado)")
@@ -164,24 +204,63 @@ def main(
             # Extrai linhas (cruas) por empresa
             dre_rows = _df_rows_for_company(df_dre, cnpj, max_rows=max_rows_per_statement)
             bpp_rows = _df_rows_for_company(df_bpp, cnpj, max_rows=max_rows_per_statement)
+            bpa_rows = _df_rows_for_company(df_bpa, cnpj, max_rows=max_rows_per_statement)
 
             # Métricas derivadas (opcional) usando utilitários da integração
             extracted: Dict[str, Any] = {}
             try:
                 # Patrimônio Líquido
-                pl_df = cvm.extrair_patrimonio_liquido(df_bpp[df_bpp["CNPJ_CIA"].astype(str) == cnpj])
+                bpp_sub = _df_filter_by_cnpj(df_bpp, cnpj)
+                pl_df = cvm.extrair_patrimonio_liquido(bpp_sub) if bpp_sub is not None else None
                 extracted["patrimonio_liquido"] = _pick_latest_metric(
-                    pl_df.to_dict(orient="records"),
+                    pl_df.to_dict(orient="records") if pl_df is not None else [],
                     "PATRIMONIO_LIQUIDO",
                 )
             except Exception:
                 extracted["patrimonio_liquido"] = None
 
             try:
+                # Dívida bruta (heurística)
+                bpp_sub = _df_filter_by_cnpj(df_bpp, cnpj)
+                div_df = cvm.extrair_divida_bruta(bpp_sub) if bpp_sub is not None else None
+                extracted["divida_bruta"] = _pick_latest_metric(
+                    div_df.to_dict(orient="records") if div_df is not None else [],
+                    "DIVIDA_BRUTA",
+                )
+            except Exception:
+                extracted["divida_bruta"] = None
+
+            try:
+                # Caixa e equivalentes (heurística) — requer BPA
+                if df_bpa is None:
+                    extracted["caixa_equivalentes"] = None
+                else:
+                    bpa_sub = _df_filter_by_cnpj(df_bpa, cnpj)
+                    cx_df = cvm.extrair_caixa_equivalentes(bpa_sub) if bpa_sub is not None else None
+                    extracted["caixa_equivalentes"] = _pick_latest_metric(
+                        cx_df.to_dict(orient="records") if cx_df is not None else [],
+                        "CAIXA_EQUIVALENTES",
+                    )
+            except Exception:
+                extracted["caixa_equivalentes"] = None
+
+            try:
+                # Dívida líquida (quando ambos existem)
+                d = extracted.get("divida_bruta")
+                c = extracted.get("caixa_equivalentes")
+                if d is None or c is None:
+                    extracted["divida_liquida"] = None
+                else:
+                    extracted["divida_liquida"] = float(d) - float(c)
+            except Exception:
+                extracted["divida_liquida"] = None
+
+            try:
                 # Proventos encontrados por keyword (heurístico)
-                prov_df = cvm.extrair_dividendos(df_dre[df_dre["CNPJ_CIA"].astype(str) == cnpj])
+                dre_sub = _df_filter_by_cnpj(df_dre, cnpj)
+                prov_df = cvm.extrair_dividendos(dre_sub) if dre_sub is not None else None
                 extracted["proventos_total_keywords"] = _pick_latest_metric(
-                    prov_df.to_dict(orient="records"),
+                    prov_df.to_dict(orient="records") if prov_df is not None else [],
                     "PROVENTOS_TOTAL",
                 )
             except Exception:
@@ -190,7 +269,7 @@ def main(
             # Define as_of_date como a última DT_REFER que aparecer nos dados filtrados
             latest_dates = [
                 str(r.get("DT_REFER") or "")
-                for r in (dre_rows + bpp_rows)
+                for r in (dre_rows + bpp_rows + bpa_rows)
                 if r.get("DT_REFER")
             ]
             as_of = max(latest_dates) if latest_dates else date(int(year), 12, 31).isoformat()
@@ -202,6 +281,7 @@ def main(
                 "statements": {
                     "DRE": dre_rows,
                     "BPP": bpp_rows,
+                    "BPA": bpa_rows,
                 },
                 "extracted": extracted,
                 "fetched_at": datetime.now(timezone.utc).isoformat(),

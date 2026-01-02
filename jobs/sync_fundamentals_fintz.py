@@ -15,7 +15,7 @@ Requer (Supabase): executar `sql/007_add_fundamentals_raw.sql`.
 from __future__ import annotations
 
 import os
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from integrations.fintz_integration import FintzIntegration
@@ -36,6 +36,7 @@ def main(
     api_key: Optional[str] = None,
     tipo_periodo: Optional[str] = None,
     tipo_demonstracao: Optional[str] = None,
+    proventos_days: int = 0,
 ) -> None:
     started_at = datetime.now(timezone.utc)
     sb = get_supabase_admin_client()
@@ -77,14 +78,21 @@ def main(
                 tipo_demonstracao=tipo_demonstracao,
             )
 
+            proventos: List[Dict[str, Any]] = []
+            if proventos_days and proventos_days > 0:
+                start = (date.fromisoformat(as_of) - timedelta(days=int(proventos_days))).isoformat()
+                proventos = fintz.get_proventos(ticker, data_inicio=start, data_fim=as_of)
+
             payload: Dict[str, Any] = {
                 "ticker": ticker,
                 "indicadores": indicadores,
                 "itens_contabeis": itens,
+                "proventos": proventos,
                 "fetched_at": datetime.now(timezone.utc).isoformat(),
                 "source_meta": {
                     "tipoPeriodo": tipo_periodo,
                     "tipoDemonstracao": tipo_demonstracao,
+                    "proventosDays": int(proventos_days) if proventos_days else 0,
                 },
             }
 
@@ -137,6 +145,12 @@ if __name__ == "__main__":
         default=None,
         help="tipoDemonstracao (CONSOLIDADO, INDIVIDUAL) para itens contábeis (opcional)",
     )
+    parser.add_argument(
+        "--proventos-days",
+        type=int,
+        default=0,
+        help="Se >0, busca proventos dos últimos N dias e salva junto no payload (opcional; default=0)",
+    )
 
     args = parser.parse_args()
 
@@ -149,4 +163,5 @@ if __name__ == "__main__":
         api_key=args.api_key,
         tipo_periodo=args.tipo_periodo,
         tipo_demonstracao=args.tipo_demonstracao,
+        proventos_days=int(args.proventos_days or 0),
     )

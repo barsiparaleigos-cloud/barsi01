@@ -95,6 +95,20 @@ try {
     exit 1
 }
 
+# Job 1b: Popular universo de tickers (Brapi quote/list) - opcional
+Write-Host ""
+Write-Host "[5b/8] JOB 1b: Popular universo de tickers (Brapi quote/list) - opcional..."
+Write-Host "------------------------------------------------------------------------"
+try {
+    & $python -m jobs.sync_ticker_mapping_brapi_list
+    Write-Host ""
+    Write-Host "  [OK] Universo de tickers atualizado"
+} catch {
+    Write-Host ""
+    Write-Host "  [AVISO] Falha ao popular tickers via Brapi (BRAPI_API_KEY pode estar ausente)"
+    Write-Host "  $_"
+}
+
 # Job 2: Preços Brapi
 Write-Host ""
 Write-Host "[6/8] JOB 2: Sincronizar Precos Brapi..."
@@ -138,6 +152,20 @@ try {
     Write-Host "  $_"
 }
 
+# Job 4b: Métricas de Dividendos (DY 12m + consistência)
+Write-Host ""
+Write-Host "[7b/8] JOB 4b: Calcular métricas de dividendos (DY 12m + consistência)..."
+Write-Host "------------------------------------------------------------------------"
+try {
+    & $python -m jobs.compute_dividend_metrics_daily
+    Write-Host ""
+    Write-Host "  [OK] Métricas de dividendos calculadas"
+} catch {
+    Write-Host ""
+    Write-Host "  [AVISO] Falha ao calcular métricas de dividendos (verifique se rodou sql/009_add_dividend_metrics_daily.sql no Supabase)"
+    Write-Host "  $_"
+}
+
 # Job 5: Fundamentos HG Brasil (payload bruto) - opcional (exige key)
 Write-Host ""
 Write-Host "[8/8] JOB 5: Sincronizar Fundamentos HG Brasil (payload bruto) - opcional..."
@@ -160,6 +188,20 @@ if (-not $hgKey) {
     }
 }
 
+# Job 5b: RI (CVM FCA) - opcional (fonte oficial, sem key)
+Write-Host ""
+Write-Host "[8b/8] JOB 5b: Sincronizar RI (CVM FCA) - opcional..."
+Write-Host "------------------------------------------------------------------------"
+try {
+    & $python -m jobs.sync_cvm_ri
+    Write-Host ""
+    Write-Host "  [OK] RI (CVM FCA) sincronizado"
+} catch {
+    Write-Host ""
+    Write-Host "  [AVISO] Job de RI falhou (verifique se rodou sql/010_add_relacoes_investidores.sql no Supabase)"
+    Write-Host "  $_"
+}
+
 # Job 5: Enriquecimento (opcional)
 Write-Host ""
 Write-Host "JOB 6: Enriquecer Ticker Mapping (opcional)..."
@@ -171,6 +213,20 @@ try {
 } catch {
     Write-Host ""
     Write-Host "  [AVISO] Enriquecimento falhou (tabela companies_cvm pode nao existir)"
+    Write-Host "  $_"
+}
+
+# Job 6b: Auto-mapear CNPJ (via nome Brapi/quote-list -> companies_cvm) - opcional
+Write-Host ""
+Write-Host "JOB 6b: Mapear CNPJ -> ticker (heuristica) - opcional..."
+Write-Host "------------------------------------------------------------------------"
+try {
+    & $python -m jobs.map_cnpj_to_ticker
+    Write-Host ""
+    Write-Host "  [OK] Mapeamento CNPJ sugerido (verificado=false)"
+} catch {
+    Write-Host ""
+    Write-Host "  [AVISO] Mapeamento CNPJ falhou (precisa companies_cvm + BRAPI_API_KEY para ampla cobertura)"
     Write-Host "  $_"
 }
 
@@ -186,3 +242,4 @@ Write-Host "  3. Gerar ranking de empresas (metodologia)"
 Write-Host ""
 Write-Host "Para re-executar: .\scripts\run_master_sync.ps1"
 Write-Host ""
+

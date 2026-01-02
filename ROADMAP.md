@@ -6,6 +6,26 @@
 
 ---
 
+## ✅ Definição do MVP (Jan/2026) — decisão tomada
+
+**Objetivo do MVP:** ensinar (leigos/crianças) e dar uma lista pequena e confiável de “PODE COMPRAR / ESPERE” com explicação simples.
+
+**Escopo do MVP (o que entra):**
+- Universo: **30–50 tickers BESST** (curados/verificados)
+- Preço: **diário**
+- Dividendos/proventos: histórico suficiente para **DPA médio 5 anos**
+- Sinal principal: **Preço-teto + Regra dos 6%**
+- Transparência: sempre guardar **fonte + data de coleta** (raw)
+
+**Fora do MVP (depois):** backtest point-in-time, ajuste completo por eventos corporativos, IA em PDFs/RI.
+
+**Critérios de aceite do MVP:**
+- Para cada ticker do universo: `preco_atual`, `dpa_5y` (ou equivalente), `preco_teto`, `status` (comprar/esperar/sem dados) e **motivo**
+- Execução diária sem depender de APIs pagas por “ticker a ticker”
+- Dados rastreáveis (source-of-truth em DB) e reprocessamento possível
+
+---
+
 ## 📊 Progresso Geral
 
 **Fase 1 (Fundação):** ████████░░ 80% ✅  
@@ -17,6 +37,78 @@
 ## 📌 Fonte de verdade (metodologia)
 
 - 📄 **Metodologia + Fórmula + Critérios + Estrelas do ranking:** [docs/METODOLOGIA-FORMULA-COMPLETA.md](docs/METODOLOGIA-FORMULA-COMPLETA.md)
+
+---
+
+## 🧭 ROADMAP (Supabase / Método Barsi “na íntegra”)
+
+> Esta seção espelha o estado real do pipeline em Supabase (ingestão + materializações).
+
+### A) Dados base (persistência + automação)
+- [x] Persistência real no Supabase (contagens + amostras)
+- [x] `job_runs` (observabilidade)
+- [x] Ingestão diária Brapi (preços/dividendos/fundamentos) com fallback sem `BRAPI_API_KEY`
+- [x] Ingestão CVM: cadastro + DFP (raw)
+
+### B) Conectores e normalização (CNPJ ↔ ticker)
+- [x] `ticker_mapping` populado via Brapi `quote/list`
+- [x] Sugestão automática de CNPJ por matching de nomes (CVM cadastro)
+- [ ] Curadoria (MVP): definir universo BESST (30–50) e marcar `verificado=true` (lista “golden”)
+
+### C) Métricas essenciais do método (camada de dados)
+- [x] Dividendos 12m + consistência (materializado em `dividend_metrics_daily`)
+- [x] DFP CVM normalizado básico (materializado em `cvm_dfp_metrics_daily`)
+- [x] Solvência: patrimônio vs dívida/caixa (migração 012 + compute)
+- [ ] Qualidade: lucro líquido (DFP) + ROE (Lucro/PL) (validar extração e preencher 2024)
+- [ ] Sustentabilidade: payout (Proventos/Lucro) (definir fonte de proventos do MVP)
+- [ ] Caixa/FCF: ingestão e métricas via DFC (fluxo de caixa) para cobertura de dividendos
+- [ ] Ajustes corporativos: normalização de proventos por ação (desdobramentos/grupamentos)
+
+### C1) Pacote mínimo para o MVP (destrava UI + ranking)
+- [ ] `dpa_5y` (ou dpa_medio) por ticker
+- [ ] `preco_teto` por ticker/dia
+- [ ] `status_mvp` por ticker/dia: COMPRAR | ESPERAR | SEM_DADOS (com `motivo_mvp`)
+- [ ] “Gates” de qualidade: ticker só entra em ranking se tiver dados mínimos
+
+### F) Caminho próprio (dados brutos) para reduzir custo de APIs pagas 🔴 ALTA
+> Objetivo: não depender de Fintz/HG Brasil para operar o MVP e evoluir para um método “investível”.
+
+**Estratégia do MVP (curta):**
+- Preço: começar com **Brapi** para destravar (já integrado), mas **migrar para batch B3** como caminho definitivo.
+- Proventos: manter um **conector opcional** (HG Brasil v2, limitado ao universo MVP) com cache + persistência raw.
+
+**F1) Preços históricos via B3 (batch, sem API por ticker)**
+- [ ] Ingestão B3 COTAHIST (download + parser) para popular OHLC/volume
+- [ ] Materialização `prices_daily` a partir do arquivo consolidado (1 arquivo/dia)
+- [ ] Ajustes corporativos de preço (split/inplit/bonificação) para preço ajustado (se disponível)
+
+**F2) Macro oficial (BCB/IBGE) para contexto e filtros**
+- [ ] Ingestão BCB (Selic/CDI/SGS) + PTAX (câmbio) + IPCA (IBGE)
+- [ ] Tabela `macro_series_daily` (ex.: selic, cdi, ipca, usdbrl)
+
+**F3) Proventos/eventos corporativos (principal gargalo vs fontes pagas)**
+- [ ] Definir “fonte de proventos” MVP (pode ser limitada): brapi/hgbrasil ou base oficial alternativa
+- [ ] Persistir proventos com campos mínimos: `ticker`, `ex_date`, `pay_date`, `amount_per_share`, `type`, `source`
+- [ ] Regras de normalização: deduplicação + padronização de tipos (dividend/jcp/etc.)
+
+**F4) Qualidade e rastreabilidade do dado (para ficar próximo de 100%)**
+- [ ] Data Quality Gates: flags por ticker/dia (ex.: `has_price`, `has_dividends`, `has_profit`, `has_equity`)
+- [ ] Cross-check de fontes (quando houver 2 fontes): divergência de preço/dividendo acima de threshold gera alerta
+- [ ] Log de origem por métrica (ex.: lucro veio de DRE linha X / provento veio da fonte Y)
+
+**F5) Backtest “sem look-ahead” (point-in-time) – evolução pós-MVP**
+- [ ] Armazenar data de referência vs data de publicação do documento CVM
+- [ ] Queries “as-of” para ranking histórico (evitar usar dado que não existia na época)
+
+### D) Regras por setor (evitar falso positivo)
+- [ ] Separar “financeiras” (bancos/seguradoras) vs “não-financeiras” no score
+- [ ] Thresholds por setor (ex.: dívida/PL não é comparável entre bancos e utilities)
+
+### E) RI e documentos (camada de evidência)
+- [x] RI (FCA): contatos/canal oficial em `relacoes_investidores`
+- [ ] Índice de documentos (metadados + links): DFP/ITR/FRE/FR/Comunicados (CVM)
+- [ ] Persistir documentos: download + hash + versionamento (mudanças)
+- [ ] (Opcional) IA: sumarização e extração de riscos/temas a partir de PDFs/HTML
 
 ---
 

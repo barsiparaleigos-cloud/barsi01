@@ -8,11 +8,17 @@ Requer (Supabase): executar `sql/007_add_fundamentals_raw.sql`.
 
 from __future__ import annotations
 
+import os
+
 from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from jobs.common import get_supabase_admin_client, list_active_tickers, log_job_run
 from integrations.brapi_integration import BrapiIntegration
+
+
+def _env_brapi_key() -> Optional[str]:
+    return (os.getenv("BRAPI_API_KEY") or "").strip() or None
 
 
 def _chunk(items: List[str], size: int) -> List[List[str]]:
@@ -39,6 +45,9 @@ def main(
 
     as_of = date.today().isoformat()
 
+    if api_key is None:
+        api_key = _env_brapi_key()
+
     if not tickers:
         tickers = list_active_tickers(sb)
 
@@ -48,6 +57,13 @@ def main(
     if not tickers:
         print("[AVISO] Nenhum ticker ativo encontrado.")
         return
+
+    # Sem token, a Brapi pode limitar o universo: manter execução resiliente.
+    if not api_key:
+        tickers = [t for t in tickers if t in BrapiIntegration.FREE_TICKERS]
+        if not tickers:
+            tickers = list(BrapiIntegration.FREE_TICKERS)
+        print("[AVISO] BRAPI_API_KEY ausente; usando apenas tickers gratuitos.")
 
     brapi = BrapiIntegration(api_key=api_key)
 

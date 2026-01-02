@@ -1,0 +1,57 @@
+name: Weekly CVM DFP (Fundamentals)
+
+on:
+  schedule:
+    - cron: "0 14 * * 0" # Sundays 14:00 UTC
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Ano fiscal DFP (ex: 2024). Se vazio, usa (ano_atual - 2) e (ano_atual - 3)."
+        required: false
+        type: string
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: CVM enrichment + DFP
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BRAPI_API_KEY: ${{ secrets.BRAPI_API_KEY }}
+          # Limite (opcional) para evitar jobs longos demais em CI.
+          DFP_TICKER_LIMIT: "120"
+        run: |
+          python -m jobs.sync_fundamentals_cvm
+          python -m jobs.sync_ticker_mapping_brapi_list
+          python -m jobs.map_cnpj_to_ticker
+
+          if [ -n "${{ inputs.year }}" ]; then
+            YEAR1="${{ inputs.year }}"
+            YEAR2=""
+          else
+            YEAR1=$(python -c "import datetime; print(datetime.date.today().year - 2)")
+            YEAR2=$(python -c "import datetime; print(datetime.date.today().year - 3)")
+          fi
+
+          echo "DFP years: ${YEAR1} ${YEAR2}"
+          python -m jobs.sync_fundamentals_cvm_dfp --year "${YEAR1}" --max-rows 500
+          python -m jobs.compute_cvm_dfp_metrics_daily --year "${YEAR1}"
+          if [ -n "${YEAR2}" ]; then
+            python -m jobs.sync_fundamentals_cvm_dfp --year "${YEAR2}" --max-rows 500
+            python -m jobs.compute_cvm_dfp_metrics_daily --year "${YEAR2}"
+          fi

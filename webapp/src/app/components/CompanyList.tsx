@@ -56,14 +56,14 @@ export function CompanyList() {
       setLoading(true);
 
       // Carregar estatísticas
-      const statsRes = await fetch('http://127.0.0.1:8001/api/stats');
+      const statsRes = await fetch('/api/stats');
       const statsData = await statsRes.json();
       setStats(statsData);
 
       // Carregar empresas
       const url = filtroBesstAtivo 
-        ? 'http://127.0.0.1:8001/api/empresas?apenas_monitoradas=true'
-        : 'http://127.0.0.1:8001/api/empresas';
+        ? '/api/empresas?apenas_monitoradas=true'
+        : '/api/empresas';
       
       const empresasRes = await fetch(url);
       const empresasData = await empresasRes.json();

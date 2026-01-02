@@ -1,8 +1,8 @@
-name: Daily Jobs
+name: Weekly RI (CVM FCA)
 
 on:
   schedule:
-    - cron: "0 12 * * *" # 12:00 UTC
+    - cron: "0 13 * * 1" # Mondays 13:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -22,16 +22,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run jobs
+      - name: Sync RI (CVM FCA)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          BRAPI_API_KEY: ${{ secrets.BRAPI_API_KEY }}
         run: |
-          python -m jobs.sync_precos_brapi
-          python -m jobs.sync_dividendos_brapi
-          python -m jobs.sync_fundamentals_brapi
-          python -m jobs.compute_fundamentals_daily
-          python -m jobs.compute_dividend_metrics_daily
-          python -m jobs.compute_signals
+          python -m jobs.sync_cvm_ri

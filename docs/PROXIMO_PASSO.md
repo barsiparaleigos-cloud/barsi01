@@ -1,23 +1,53 @@
-# 🚀 Próximo Passo: Sincronizar Brapi → Supabase
+# 🚀 Próximo Passo (MVP): travar Universo + dados mínimos
 
 ## ✅ O que você já tem:
-- ✅ Migração 003 aplicada no Supabase
-- ✅ Tabelas `precos` e `ticker_mapping` criadas
-- ✅ Integração Brapi funcionando
-- ✅ 4 tickers de teste (PETR4, VALE3, ITUB4, MGLU3)
+- ✅ Pipeline rodando e UI pronta para “ensinar” (onboarding + explicações)
+- ✅ Filtro BESST implementado (empresas no radar)
+- ✅ Integrações e jobs de dados já existem (incluindo caminhos Brapi/CVM)
 
 ---
 
-## 🎯 Próximo passo: TESTAR sincronização
+## 🎯 Próximo passo (ordem correta)
 
-### Opção 1: Teste Rápido (via script)
+### Passo 1) Definir o Universo MVP (30–50 tickers)
+Crie uma lista curta e verificável. Isso reduz custo e aumenta qualidade.
+
+**Formato sugerido:** `universo_mvp.csv`
+```
+ticker,nome,setor_besst
+ITUB4,Itaú Unibanco,B
+TAEE11,Taesa,E
+...
+```
+
+**Critério:** somente BESST + tickers que você realmente quer ensinar.
+
+---
+
+### Passo 2) Garantir preço diário para o Universo MVP
+No curto prazo, use o que já está integrado para destravar a UI.
+
+**Nota importante (custo/plano):** com a chave atual, os endpoints de ações da HG Brasil estão retornando erro de plano (ex.: `Member Premium`/`Professional`). Então, para o MVP agora, o caminho mais direto é **Brapi com `BRAPI_API_KEY`**.
+
+**Critério de aceite:** todo ticker do universo tem `preco_atual` do dia.
+
+---
+
+### Passo 3) Garantir proventos suficientes para DPA 5 anos
+Esse é o gargalo real do método.
+
+**Critério de aceite:** todo ticker do universo tem histórico para calcular `dpa_5y`.
+
+## ✅ Se você quiser validar hoje (rápido)
+
+### Opção A: Teste rápido do job de preço (se já existir no projeto)
 
 ```powershell
 cd "<PROJECT_ROOT>\barsi01"
 .\scripts\test_sync_brapi.ps1
 ```
 
-### Opção 2: Teste Manual
+### Opção B: Teste manual
 
 ```powershell
 cd "<PROJECT_ROOT>\barsi01"
@@ -77,6 +107,9 @@ Certifique-se que tem:
 ```env
 SUPABASE_URL=https://seu-projeto.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=seu_service_role_key_aqui
+
+# Necessário para processar o universo MVP completo via Brapi
+BRAPI_API_KEY=sua_chave_brapi_aqui
 ```
 
 > 💡 **Onde conseguir:**
@@ -161,11 +194,10 @@ ON CONFLICT (ticker) DO NOTHING;
 
 ## 🎉 Depois que funcionar:
 
-1. ✅ Sistema sincronizando Brapi → Supabase
-2. 🔧 Próximo: Adicionar mais empresas BESST
-3. 🔧 Próximo: Buscar dividendos históricos
-4. 🔧 Próximo: Calcular Dividend Yield
-5. 🔧 Próximo: Exibir na UI
+1. ✅ Universo MVP travado e verificável
+2. ✅ Preço diário para 30–50 tickers
+3. ✅ Proventos para DPA 5 anos
+4. ✅ UI consegue mostrar “Preço certo” + “Pode comprar/espere” com explicação
 
 ---
 
